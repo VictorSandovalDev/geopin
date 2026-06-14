@@ -1,0 +1,60 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: geopin-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: geopin
+      POSTGRES_PASSWORD: geopin
+      POSTGRES_DB: geopin
+    ports:
+      - "5432:5432"
+    volumes:
+      - geopin_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U geopin -d geopin"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: geopin-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - geopin_redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: geopin-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://geopin:geopin@postgres:5432/geopin?schema=public
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-change-me}
+      JWT_EXPIRES_IN: 7d
+      API_PORT: 4000
+      API_CORS_ORIGIN: ${API_CORS_ORIGIN:-http://localhost:3000}
+    ports:
+      - "4000:4000"
+    profiles: ["full"]
+
+volumes:
+  geopin_pg:
+  geopin_redis:

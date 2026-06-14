@@ -1,0 +1,11 @@
+/* Optional shared CSS — imported by apps/web/app/layout.tsx. Keep minimal;
+   Tailwind does most of the work through the preset. */
+
+@layer utilities {
+  .glass {
+    @apply bg-panel/70 border border-border backdrop-blur-xl;
+  }
+  .text-gradient-brand {
+    @apply bg-grad-brand bg-clip-text text-transparent;
+  }
+}

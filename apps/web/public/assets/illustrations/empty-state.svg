@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 260">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#22E9FF"/>
+      <stop offset="100%" stop-color="#8B5CF6"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="260" fill="none"/>
+  <ellipse cx="200" cy="220" rx="140" ry="10" fill="#080B1A" opacity="0.4"/>
+  <g transform="translate(120 40)">
+    <path d="M80 8 C58 8 42 24 42 46 C42 72 80 120 80 120 C80 120 118 72 118 46 C118 24 102 8 80 8 Z" fill="url(#g)"/>
+    <circle cx="80" cy="46" r="14" fill="#080B1A"/>
+    <circle cx="80" cy="46" r="6" fill="#22E9FF"/>
+  </g>
+  <text x="200" y="200" text-anchor="middle" font-family="'Inter'" font-size="14" fill="#9AA3C7">No rounds yet — create a room to begin.</text>
+</svg>

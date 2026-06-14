@@ -1,0 +1,66 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Leaflet CSS is imported as a side-effect in app/layout.tsx so it loads
+   before PostCSS rewrites @import order. Don't re-import it here. */
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  @apply bg-void text-ink font-sans;
+  min-height: 100%;
+}
+
+body {
+  background-image:
+    radial-gradient(circle at 10% -10%, rgba(34, 233, 255, 0.12), transparent 35%),
+    radial-gradient(circle at 95% 10%, rgba(255, 60, 172, 0.10), transparent 40%),
+    radial-gradient(circle at 50% 120%, rgba(139, 92, 246, 0.18), transparent 50%),
+    #080B1A;
+  background-attachment: fixed;
+}
+
+.font-display {
+  font-family: "Space Grotesk", "Inter", system-ui, sans-serif;
+}
+
+/* Leaflet dark overlay */
+.leaflet-container {
+  background: #0E1329;
+  font-family: inherit;
+  height: 100%;
+  width: 100%;
+}
+
+.leaflet-tile {
+  filter: brightness(0.85) contrast(1.05) saturate(1.1) hue-rotate(5deg);
+}
+
+/* Pretty scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(34, 233, 255, 0.2);
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(34, 233, 255, 0.4);
+}
+
+@layer utilities {
+  .glass {
+    @apply bg-panel/70 border border-border backdrop-blur-xl;
+  }
+  .text-gradient-brand {
+    @apply bg-grad-brand bg-clip-text text-transparent;
+  }
+}

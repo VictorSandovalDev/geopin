@@ -1,0 +1,165 @@
+// ------------------------------------------------------------------
+//  GeoPin — Prisma schema
+// ------------------------------------------------------------------
+//  Modelo relacional para usuarios, partidas, rondas, puntajes y
+//  ranking. Los estados efímeros (sala activa, timers) viven en Redis;
+//  Postgres persiste solo lo histórico y el perfil del jugador.
+// ------------------------------------------------------------------
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  username     String   @unique
+  passwordHash String?
+  avatarSeed   String   @default(cuid())
+  country      String?
+  isPremium    Boolean  @default(false)
+  oauthProvider String?
+  oauthId      String?
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  stats        PlayerStats?
+  games        GamePlayer[]
+  rounds       RoundGuess[]
+  packs        MapPack[]
+
+  @@index([country])
+  @@index([isPremium])
+}
+
+model PlayerStats {
+  userId         String  @id
+  gamesPlayed    Int     @default(0)
+  totalScore     Int     @default(0)
+  bestScore      Int     @default(0)
+  perfectGuesses Int     @default(0)
+  averageScore   Float   @default(0)
+  updatedAt      DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum GameMode {
+  CLASSIC
+  DUEL
+  TEAM
+  TRAINING
+}
+
+enum GameDifficulty {
+  EASY
+  NORMAL
+  HARD
+}
+
+model Game {
+  id          String          @id @default(cuid())
+  code        String          @unique
+  mode        GameMode        @default(CLASSIC)
+  difficulty  GameDifficulty  @default(NORMAL)
+  roundCount  Int             @default(5)
+  roundSeconds Int            @default(90)
+  hostId      String?
+  startedAt   DateTime?
+  endedAt     DateTime?
+  createdAt   DateTime        @default(now())
+
+  players     GamePlayer[]
+  rounds      Round[]
+
+  @@index([mode])
+  @@index([endedAt])
+}
+
+model GamePlayer {
+  id        String  @id @default(cuid())
+  gameId    String
+  userId    String
+  score     Int     @default(0)
+  rank      Int?
+  joinedAt  DateTime @default(now())
+
+  game      Game    @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([gameId, userId])
+  @@index([userId])
+}
+
+model Round {
+  id        String  @id @default(cuid())
+  gameId    String
+  index     Int
+  locationId String
+  startedAt DateTime?
+  endedAt   DateTime?
+
+  game      Game      @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  location  Location  @relation(fields: [locationId], references: [id])
+  guesses   RoundGuess[]
+
+  @@unique([gameId, index])
+}
+
+model RoundGuess {
+  id          String   @id @default(cuid())
+  roundId     String
+  userId      String
+  guessLat    Float
+  guessLng    Float
+  distanceKm  Float
+  score       Int
+  submittedAt DateTime @default(now())
+
+  round       Round    @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([roundId, userId])
+  @@index([userId])
+}
+
+model MapPack {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  emoji       String   @default("🗺️")
+  description String   @default("")
+  countries   String[] @default([])
+  isPublic    Boolean  @default(false)
+  ownerId     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  owner User? @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+
+  @@index([ownerId])
+  @@index([isPublic])
+}
+
+model Location {
+  id          String   @id @default(cuid())
+  lat         Float
+  lng         Float
+  country     String?
+  city        String?
+  provider    String   @default("synthetic")
+  providerRef String?
+  difficulty  GameDifficulty @default(NORMAL)
+  createdAt   DateTime @default(now())
+
+  rounds      Round[]
+
+  @@index([country])
+  @@index([difficulty])
+}
