@@ -9,7 +9,8 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
   const logger = new Logger("Bootstrap");
 
-  const port = Number(process.env.API_PORT ?? 4000);
+  // Most hosts (Railway, Render, Fly, etc.) inject the port via PORT.
+  const port = Number(process.env.PORT ?? process.env.API_PORT ?? 4000);
   const corsOrigin = process.env.API_CORS_ORIGIN ?? "http://localhost:3000";
 
   app.use(helmet({ crossOriginResourcePolicy: false }));

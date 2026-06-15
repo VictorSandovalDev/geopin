@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import {
   Button,
   Card,
@@ -54,6 +54,14 @@ const StreetView = dynamic(
 const GOOGLE_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY ?? "";
 
 export default function PlayPage() {
+  return (
+    <Suspense fallback={null}>
+      <PlayPageInner />
+    </Suspense>
+  );
+}
+
+function PlayPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const roomQuery = searchParams.get("room");
