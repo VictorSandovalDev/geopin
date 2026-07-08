@@ -31,6 +31,7 @@ const en: Dict = {
       description:
         "GeoPin is a real-time multiplayer geography game. Explore a random spot on Earth, guess its location, and climb the leaderboard — with your friends or against the planet.",
       playNow: "Play now",
+      multiplayerBtn: "Multiplayer",
       seeRanking: "See ranking",
       statRounds: "Rounds played",
       statAvg: "Avg round",
@@ -130,6 +131,9 @@ const en: Dict = {
     top: "top 50",
     loading: "Loading…",
     empty: "No games played yet. Be the first on the board!",
+    soloBests: "Solo personal bests",
+    thisDevice: "this device",
+    recentGames: "Recent solo games",
   },
   play: {
     createTitle: "Create a room",
@@ -181,6 +185,30 @@ const en: Dict = {
     awaiting: "awaiting opponent…",
     round: "round",
   },
+  solo: {
+    title: "Solo mode",
+    subtitle:
+      "Play instantly — no account, no room, no waiting. Pick a region and go.",
+    bestScore: "Best score",
+    roundsLabel: "Rounds",
+    timeLabel: "Time per round",
+    start: "Start game",
+    multiplayerInstead: "Multiplayer →",
+    loadError:
+      "Could not load locations. Check your connection and try again.",
+    totalScore: "total score",
+    quit: "Quit",
+    seeResults: "See results",
+    newBest: "🎉 New personal best!",
+    outOf: "out of {max} possible",
+    changeSettings: "Change settings",
+    noGuessShort: "no guess",
+    playSolo: "Play solo",
+    soloCardTitle: "Play solo",
+    soloCardDesc:
+      "No account needed. Instant single-player game against the clock.",
+    soloCardBtn: "Solo mode",
+  },
   pack: {
     title: "Create map pack",
     emoji: "Emoji",
@@ -225,6 +253,7 @@ const es: Dict = {
       description:
         "GeoPin es un juego de geografía multijugador en tiempo real. Explora un punto al azar de la Tierra, adivina su ubicación y escala en la clasificación, con tus amigos o contra el planeta.",
       playNow: "Jugar ahora",
+      multiplayerBtn: "Multijugador",
       seeRanking: "Ver ranking",
       statRounds: "Rondas jugadas",
       statAvg: "Ronda media",
@@ -325,6 +354,9 @@ const es: Dict = {
     top: "top 50",
     loading: "Cargando…",
     empty: "Aún no se han jugado partidas. ¡Sé el primero en la tabla!",
+    soloBests: "Récords en solitario",
+    thisDevice: "este dispositivo",
+    recentGames: "Partidas recientes en solitario",
   },
   play: {
     createTitle: "Crea una sala",
@@ -375,6 +407,30 @@ const es: Dict = {
   hud: {
     awaiting: "esperando rival…",
     round: "ronda",
+  },
+  solo: {
+    title: "Modo solitario",
+    subtitle:
+      "Juega al instante: sin cuenta, sin sala, sin esperas. Elige una región y listo.",
+    bestScore: "Mejor puntuación",
+    roundsLabel: "Rondas",
+    timeLabel: "Tiempo por ronda",
+    start: "Empezar partida",
+    multiplayerInstead: "Multijugador →",
+    loadError:
+      "No se pudieron cargar ubicaciones. Revisa tu conexión e inténtalo de nuevo.",
+    totalScore: "puntuación total",
+    quit: "Salir",
+    seeResults: "Ver resultados",
+    newBest: "🎉 ¡Nuevo récord personal!",
+    outOf: "de {max} posibles",
+    changeSettings: "Cambiar ajustes",
+    noGuessShort: "sin pin",
+    playSolo: "Jugar solo",
+    soloCardTitle: "Juega en solitario",
+    soloCardDesc:
+      "Sin cuenta. Partida individual instantánea contra el reloj.",
+    soloCardBtn: "Modo solitario",
   },
   pack: {
     title: "Crear pack de mapas",

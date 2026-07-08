@@ -6,7 +6,7 @@ import { Logo, Avatar, Button, Badge } from "@geopin/ui";
 import { useAuthStore } from "@/lib/store";
 import { useI18n } from "@/lib/i18n";
 import { LanguageSelector } from "@/components/LanguageSelector";
-import { Trophy, Home, Swords } from "lucide-react";
+import { Trophy, Home, Swords, MapPin } from "lucide-react";
 
 export function Nav() {
   const pathname = usePathname();
@@ -14,11 +14,12 @@ export function Nav() {
   const clear = useAuthStore((s) => s.clear);
   const { t } = useI18n();
 
-  // Immersive full-screen mode for the play route.
-  if (pathname === "/play") return null;
+  // Immersive full-screen mode for the game routes.
+  if (pathname === "/play" || pathname === "/solo") return null;
 
   const links = [
     { href: "/", label: t("nav.home"), icon: Home },
+    { href: "/solo", label: t("solo.playSolo"), icon: MapPin },
     { href: "/play", label: t("nav.play"), icon: Swords },
     { href: "/leaderboard", label: t("nav.ranking"), icon: Trophy },
   ];

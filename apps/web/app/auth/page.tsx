@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button, Card, CardBody, CardHeader, CardTitle, Input, Logo, useToast } from "@geopin/ui";
 import { api, ApiError } from "@/lib/api";
@@ -139,6 +140,13 @@ export default function AuthPage() {
                 ? t("auth.playAsGuest")
                 : t("auth.signIn")}
           </Button>
+
+          <Link
+            href="/solo"
+            className="text-center text-sm text-ink-muted hover:text-brand-cyan transition"
+          >
+            {t("solo.soloCardDesc")} →
+          </Link>
         </CardBody>
       </Card>
     </div>

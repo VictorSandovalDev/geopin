@@ -12,6 +12,7 @@ import {
   Leaderboard,
 } from "@geopin/ui";
 import { api } from "@/lib/api";
+import { SOLO_PACKS } from "@/lib/solo";
 import { useI18n } from "@/lib/i18n";
 import type { LeaderboardEntry, MapPack } from "@geopin/types";
 import {
@@ -36,7 +37,8 @@ export default function HomePage() {
     api
       .get<MapPack[]>("/packs")
       .then((p) => setPacks(p.filter((x) => !x.isCustom).slice(0, 7)))
-      .catch(() => {});
+      // API offline → show the built-in solo packs so the section still renders.
+      .catch(() => setPacks(SOLO_PACKS.slice(0, 7)));
     api
       .get<LeaderboardEntry[]>("/users/leaderboard?limit=5")
       .then(setTop)
@@ -87,13 +89,18 @@ function Hero() {
         </p>
 
         <div className="flex flex-wrap gap-3">
-          <Link href="/play">
+          <Link href="/solo">
             <Button size="lg" rightIcon={<ArrowRight className="w-4 h-4" />}>
               {t("home.hero.playNow")}
             </Button>
           </Link>
+          <Link href="/play">
+            <Button size="lg" variant="secondary" leftIcon={<Users className="w-4 h-4" />}>
+              {t("home.hero.multiplayerBtn")}
+            </Button>
+          </Link>
           <Link href="/leaderboard">
-            <Button size="lg" variant="secondary">
+            <Button size="lg" variant="ghost">
               {t("home.hero.seeRanking")}
             </Button>
           </Link>
@@ -371,7 +378,7 @@ function PacksShowcase({ packs }: { packs: MapPack[] }) {
       />
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {packs.map((p) => (
-          <Link key={p.id} href="/play">
+          <Link key={p.id} href="/solo">
             <Card interactive className="h-full">
               <CardBody className="flex flex-col gap-2 p-4 h-full">
                 <div className="text-3xl">{p.emoji}</div>
@@ -388,7 +395,7 @@ function PacksShowcase({ packs }: { packs: MapPack[] }) {
             </Card>
           </Link>
         ))}
-        <Link href="/play">
+        <Link href="/solo">
           <Card
             interactive
             className="h-full border-dashed border-brand-cyan/40 bg-brand-cyan/5"
@@ -519,13 +526,18 @@ function FinalCta() {
             {t("home.cta.description")}
           </p>
           <div className="flex flex-wrap gap-3 justify-center">
-            <Link href="/play">
+            <Link href="/solo">
               <Button size="lg" rightIcon={<ArrowRight className="w-5 h-5" />}>
                 {t("home.cta.play")}
               </Button>
             </Link>
-            <Link href="/auth">
+            <Link href="/play">
               <Button size="lg" variant="secondary">
+                {t("home.hero.multiplayerBtn")}
+              </Button>
+            </Link>
+            <Link href="/auth">
+              <Button size="lg" variant="ghost">
                 {t("home.cta.create")}
               </Button>
             </Link>
@@ -548,20 +560,16 @@ function Footer() {
         <span>© {new Date().getFullYear()}</span>
       </div>
       <div className="flex gap-4">
+        <Link href="/solo" className="hover:text-brand-cyan">
+          {t("solo.playSolo")}
+        </Link>
         <Link href="/play" className="hover:text-brand-cyan">
           {t("home.footer.play")}
         </Link>
         <Link href="/leaderboard" className="hover:text-brand-cyan">
           {t("home.footer.leaderboard")}
         </Link>
-        <a
-          href="https://console.cloud.google.com/"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="hover:text-brand-cyan"
-        >
-          {t("home.footer.maps")}
-        </a>
+        <span>{t("home.footer.maps")}</span>
       </div>
     </footer>
   );

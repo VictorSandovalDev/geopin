@@ -34,6 +34,7 @@ import { getSocket, disconnectSocket } from "@/lib/socket";
 import { formatDistance } from "@/lib/haversine";
 import { api } from "@/lib/api";
 import { pickRandomPanoramas } from "@/lib/random-streetview";
+import { SOLO_PACKS } from "@/lib/solo";
 import { PlayerBar, CenterTimer } from "@/components/HUD";
 import { CreatePackModal } from "@/components/CreatePackModal";
 import { Swords, Copy, Check, Plus } from "lucide-react";
@@ -92,7 +93,9 @@ function PlayPageInner() {
     api
       .get<MapPack[]>("/packs", token ?? undefined)
       .then(setPacks)
-      .catch(() => setPacks([]));
+      // API unreachable → fall back to the built-in packs so the host can
+      // still pick a region instead of staring at an empty grid.
+      .catch(() => setPacks(SOLO_PACKS));
   }, [token]);
 
   useEffect(() => {
@@ -279,7 +282,22 @@ function PlayPageInner() {
   // Pre-room (no room joined yet)
   if (!room) {
     return (
-      <div className="grid md:grid-cols-2 gap-4 max-w-3xl mx-auto py-10">
+      <div className="max-w-3xl mx-auto py-10 flex flex-col gap-4">
+      <Link
+        href="/solo"
+        className="block rounded-2xl border border-brand-gold/40 bg-brand-gold/5 hover:bg-brand-gold/10 hover:border-brand-gold/60 transition p-4 flex items-center justify-between gap-4"
+      >
+        <div>
+          <div className="font-display font-semibold text-ink">
+            {t("solo.soloCardTitle")}
+          </div>
+          <div className="text-sm text-ink-muted">{t("solo.soloCardDesc")}</div>
+        </div>
+        <span className="shrink-0 px-4 h-10 rounded-xl bg-brand-gold/15 border border-brand-gold/40 text-brand-gold text-sm font-medium flex items-center">
+          {t("solo.soloCardBtn")} →
+        </span>
+      </Link>
+      <div className="grid md:grid-cols-2 gap-4">
         <Card glow>
           <CardHeader>
             <CardTitle>{t("play.createTitle")}</CardTitle>
@@ -315,6 +333,7 @@ function PlayPageInner() {
             </Button>
           </CardBody>
         </Card>
+      </div>
       </div>
     );
   }
