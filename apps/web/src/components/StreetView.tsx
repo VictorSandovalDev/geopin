@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import type { Location } from "@geopin/types";
-import { MapContainer, TileLayer } from "react-leaflet";
+import { MapContainer, TileLayer, useMap } from "react-leaflet";
 import { useJsApiLoader } from "@react-google-maps/api";
 import { MapResizer } from "./MapResizer";
 
@@ -232,6 +232,21 @@ const MapillaryView: React.FC<{ location: Location; token: string }> = ({
 
 /* ──────────────────── Aerial fallback (zero-config) ──────────────────────── */
 
+/**
+ * MapContainer only reads `center` at mount — without this, every round after
+ * the first keeps showing the previous location's imagery.
+ */
+const RecenterOnLocation: React.FC<{ lat: number; lng: number }> = ({
+  lat,
+  lng,
+}) => {
+  const map = useMap();
+  React.useEffect(() => {
+    map.setView([lat, lng], 13);
+  }, [map, lat, lng]);
+  return null;
+};
+
 const AerialFallback: React.FC<
   StreetViewProps & { reason?: string }
 > = ({ location, allowPan, allowZoom, reason }) => {
@@ -250,6 +265,7 @@ const AerialFallback: React.FC<
         className="h-full w-full"
       >
         <MapResizer />
+        <RecenterOnLocation lat={location.lat} lng={location.lng} />
         <TileLayer
           url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
           attribution="Tiles © Esri"
