@@ -46,12 +46,19 @@ export function pickOfflineLocations(
   const pool = countries?.length
     ? LOCATION_DATASET.filter((l) => l.country && countries.includes(l.country))
     : LOCATION_DATASET;
-  const source = pool.length >= count ? pool : LOCATION_DATASET;
-  return shuffle(source)
-    .slice(0, count)
-    .map(({ id, lat, lng, country, city, provider, providerRef }) => ({
-      id, lat, lng, country, city, provider, providerRef,
-    }));
+  // Never mix locations from outside the pack's region — if the pool is
+  // smaller than the game, repeat entries instead of leaking the world in.
+  const source = pool.length > 0 ? pool : LOCATION_DATASET;
+  const shuffled = shuffle(source);
+  const picked = Array.from(
+    { length: count },
+    (_, i) => shuffled[i % shuffled.length]!,
+  );
+  return picked.map(({ id, lat, lng, country, city, provider, providerRef }, i) => ({
+    // De-dupe ids when the pool wraps around, so React keys stay unique.
+    id: i < shuffled.length ? id : `${id}__${i}`,
+    lat, lng, country, city, provider, providerRef,
+  }));
 }
 
 /**

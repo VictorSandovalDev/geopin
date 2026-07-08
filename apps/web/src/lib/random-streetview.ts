@@ -24,6 +24,14 @@ export const COUNTRY_BBOX: Record<string, BBox> = {
   UY: { north: -30.1, south: -34.9, east: -53.1, west: -58.4 },
   BO: { north: -9.7,  south: -22.9, east: -57.5, west: -69.6 },
   PY: { north: -19.3, south: -27.6, east: -54.2, west: -62.7 },
+  CR: { north: 11.2,  south: 8.0,   east: -82.6, west: -85.9 },
+  CU: { north: 23.3,  south: 19.8,  east: -74.1, west: -84.9 },
+  DO: { north: 19.9,  south: 17.5,  east: -68.3, west: -72.0 },
+  GT: { north: 17.8,  south: 13.7,  east: -88.2, west: -92.2 },
+  HN: { north: 16.5,  south: 12.9,  east: -83.2, west: -89.4 },
+  NI: { north: 15.0,  south: 10.7,  east: -83.1, west: -87.7 },
+  PA: { north: 9.6,   south: 7.2,   east: -77.2, west: -83.0 },
+  SV: { north: 14.4,  south: 13.2,  east: -87.7, west: -90.1 },
   US: { north: 49.0,  south: 25.0,  east: -67.0, west: -124.7 },
   CA: { north: 60.0,  south: 43.0,  east: -52.6, west: -141.0 },
 
@@ -198,13 +206,16 @@ export async function pickRandomPanoramas(opts: {
   const sv = new google.maps.StreetViewService();
   const geocoder = new google.maps.Geocoder();
 
+  // Only sample countries we have a bbox for. Falling back to WORLD_BBOX for
+  // unknown countries would leak locations from anywhere on Earth into a
+  // restricted pack — better to just skip those countries.
   const bboxes: Array<{ country: string | null; bbox: BBox }> =
     !countries || countries.length === 0
       ? [{ country: null, bbox: WORLD_BBOX }]
-      : countries.map((cc) => ({
-          country: cc,
-          bbox: COUNTRY_BBOX[cc] ?? WORLD_BBOX,
-        }));
+      : countries
+          .filter((cc) => COUNTRY_BBOX[cc])
+          .map((cc) => ({ country: cc, bbox: COUNTRY_BBOX[cc]! }));
+  if (bboxes.length === 0) bboxes.push({ country: null, bbox: WORLD_BBOX });
 
   const allowedCountries = countries && countries.length > 0
     ? new Set(countries.map((c) => c.toUpperCase()))
