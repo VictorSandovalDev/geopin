@@ -486,6 +486,7 @@ function PlayPageInner() {
       <div className="absolute inset-0 z-0">
         {actualLocation && (
           <StreetView
+            key={actualLocation.id}
             location={actualLocation}
             allowPan={room.config.allowPan}
             allowZoom={room.config.allowZoom}

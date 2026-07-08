@@ -204,7 +204,12 @@ export default function SoloPage() {
     <div className="fixed inset-0 overflow-hidden bg-void">
       {/* Full-bleed panorama */}
       <div className="absolute inset-0 z-0">
-        {location && <StreetView location={location} allowPan allowZoom />}
+        {location && (
+          // Keyed by location so each round mounts a fresh panorama — updating
+          // an existing StreetViewPanorama in place can silently keep the old
+          // scene.
+          <StreetView key={location.id} location={location} allowPan allowZoom />
+        )}
       </div>
 
       {/* Top HUD */}

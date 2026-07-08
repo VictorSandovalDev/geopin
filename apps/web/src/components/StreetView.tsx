@@ -80,6 +80,15 @@ const GoogleStreetView: React.FC<{
   const containerRef = React.useRef<HTMLDivElement | null>(null);
   const panoRef = React.useRef<google.maps.StreetViewPanorama | null>(null);
 
+  // Detach on unmount so keyed remounts don't leak panorama instances.
+  React.useEffect(
+    () => () => {
+      panoRef.current?.setVisible(false);
+      panoRef.current = null;
+    },
+    [],
+  );
+
   // Pin to the exact panorama the StreetViewService returned when we have its
   // id, so the scene matches the revealed coordinates. Otherwise snap to the
   // nearest pano at the coordinates.
