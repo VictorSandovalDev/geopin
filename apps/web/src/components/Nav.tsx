@@ -6,7 +6,7 @@ import { Logo, Avatar, Button, Badge } from "@geopin/ui";
 import { useAuthStore, useUiStore } from "@/lib/store";
 import { useI18n } from "@/lib/i18n";
 import { LanguageSelector } from "@/components/LanguageSelector";
-import { Trophy, Home, Swords, MapPin, LogIn } from "lucide-react";
+import { Trophy, Home, Swords, MapPin, LogIn, LogOut } from "lucide-react";
 
 export function Nav() {
   const pathname = usePathname();
@@ -68,8 +68,9 @@ export function Nav() {
                 <Avatar seed={user.avatarSeed || user.username} size={28} />
                 <span className="hidden md:inline text-sm">{user.username}</span>
               </Link>
-              <Button variant="ghost" size="sm" onClick={clear}>
-                {t("nav.logout")}
+              <Button variant="ghost" size="sm" onClick={clear} title={t("nav.logout")}>
+                <LogOut className="w-4 h-4" />
+                <span className="hidden sm:inline">{t("nav.logout")}</span>
               </Button>
             </>
           ) : (

@@ -461,6 +461,19 @@ function SoloGuessBox(props: {
     roundIndex, isReveal, truth, result, isLastRound, locationLabel,
   } = props;
   const [hovering, setHovering] = useState(false);
+  const boxRef = useRef<HTMLDivElement>(null);
+
+  // On touch devices there is no mouseleave — collapse when tapping outside.
+  useEffect(() => {
+    if (!hovering) return;
+    const onPointerDown = (e: PointerEvent) => {
+      if (boxRef.current && !boxRef.current.contains(e.target as Node)) {
+        setHovering(false);
+      }
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
+  }, [hovering]);
 
   const wide = isReveal || hovering;
   const width = wide
@@ -470,6 +483,7 @@ function SoloGuessBox(props: {
 
   return (
     <div
+      ref={boxRef}
       className="absolute bottom-3 right-3 md:bottom-6 md:right-6 z-30 pointer-events-auto flex flex-col gap-2"
       style={{ width, transition: "width 260ms ease-out" }}
       onMouseEnter={() => setHovering(true)}
