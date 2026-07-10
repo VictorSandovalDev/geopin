@@ -73,6 +73,8 @@ export interface RoomState {
     allowZoom: boolean;
     allowMove: boolean;
     packId: string;
+    /** Scoring scale — diagonal of the played region in km. */
+    mapSizeKm?: number;
   };
   currentRound: number;
   rounds: Round[];
@@ -89,6 +91,7 @@ export const WS_EVENTS = {
   START_GAME: "start_game",
   SUBMIT_GUESS: "submit_guess",
   NEXT_ROUND: "next_round",
+  PLAY_AGAIN: "play_again",
   CHAT: "chat",
 
   // Server → Client
@@ -206,6 +209,11 @@ export interface UserProfile extends AuthUser {
 /* ---------- Constants ---------- */
 
 export const MAX_ROUND_SCORE = 5000;
+/**
+ * Reference map size (km) for scoring — roughly the diagonal of the world.
+ * Smaller packs pass their own size so scoring stays demanding regionally.
+ */
+export const WORLD_MAP_SIZE_KM = 14916;
 export const DEFAULT_ROUNDS = 5;
 export const DEFAULT_ROUND_SECONDS = 120;
 export const MAX_PLAYERS_PER_ROOM = 10;

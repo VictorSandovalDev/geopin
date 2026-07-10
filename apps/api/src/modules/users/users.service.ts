@@ -31,6 +31,19 @@ export class UsersService {
     };
   }
 
+  async updateProfile(
+    userId: string,
+    patch: { avatarSeed?: string },
+  ): Promise<UserProfile> {
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        ...(patch.avatarSeed ? { avatarSeed: patch.avatarSeed } : {}),
+      },
+    });
+    return this.getProfile(userId);
+  }
+
   async leaderboard(opts: {
     country?: string;
     limit?: number;

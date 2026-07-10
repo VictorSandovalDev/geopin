@@ -11,10 +11,17 @@ import {
   Avatar,
   Leaderboard,
 } from "@geopin/ui";
+import dynamic from "next/dynamic";
 import { api } from "@/lib/api";
+import { useAuthStore } from "@/lib/store";
 import { SOLO_PACKS } from "@/lib/solo";
 import { useI18n } from "@/lib/i18n";
 import type { LeaderboardEntry, MapPack } from "@geopin/types";
+const Globe3D = dynamic(
+  () => import("@/components/Globe3D").then((m) => m.Globe3D),
+  { ssr: false },
+);
+
 import {
   Zap,
   Globe2,
@@ -116,9 +123,9 @@ function Hero() {
       </div>
 
       <div className="relative aspect-square">
-        <div className="absolute inset-0 bg-grad-aurora opacity-30 blur-3xl rounded-full animate-float" />
+        <div className="absolute inset-0 bg-grad-aurora opacity-30 blur-3xl rounded-full animate-float pointer-events-none" />
         <div className="relative flex items-center justify-center h-full">
-          <Logo size={280} />
+          <Globe3D />
         </div>
       </div>
     </section>
@@ -508,6 +515,7 @@ function TopRanking({ entries }: { entries: LeaderboardEntry[] }) {
 
 function FinalCta() {
   const { t } = useI18n();
+  const user = useAuthStore((s) => s.user);
   return (
     <section>
       <div className="relative overflow-hidden rounded-3xl border border-border p-10 md:p-16 text-center">
@@ -536,11 +544,13 @@ function FinalCta() {
                 {t("home.hero.multiplayerBtn")}
               </Button>
             </Link>
-            <Link href="/auth">
-              <Button size="lg" variant="ghost">
-                {t("home.cta.create")}
-              </Button>
-            </Link>
+            {!user && (
+              <Link href="/auth">
+                <Button size="lg" variant="ghost">
+                  {t("home.cta.create")}
+                </Button>
+              </Link>
+            )}
           </div>
         </div>
       </div>

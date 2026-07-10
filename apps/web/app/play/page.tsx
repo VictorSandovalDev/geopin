@@ -28,7 +28,7 @@ import {
   type GameEndedPayload,
   type MapPack,
 } from "@geopin/types";
-import { useAuthStore, useGameStore } from "@/lib/store";
+import { useAuthStore, useGameStore, useUiStore } from "@/lib/store";
 import { useI18n } from "@/lib/i18n";
 import { getSocket, disconnectSocket } from "@/lib/socket";
 import { formatDistance } from "@/lib/haversine";
@@ -114,6 +114,9 @@ function PlayPageInner() {
 
     s.on(WS_EVENTS.ROOM_STATE, (state: RoomState) => {
       setRoom(state);
+      // Host restarted the match ("play again") — every client leaves the
+      // final screen and lands back in the lobby together.
+      if (state.status === "lobby") setFinalLb(null);
     });
     s.on(WS_EVENTS.TIMER_TICK, (p: { remainingMs: number }) => {
       setRemaining(p.remainingMs);
@@ -162,6 +165,14 @@ function PlayPageInner() {
       reset();
     };
   }, [reset]);
+
+  // Full-screen (no nav) only while a match is actually being played.
+  const inMatch = !!room && room.status === "playing" && !finalLb;
+  const setImmersive = useUiStore((s) => s.setImmersive);
+  useEffect(() => {
+    setImmersive(inMatch);
+    return () => setImmersive(false);
+  }, [inMatch, setImmersive]);
 
   const currentRound = room?.rounds[room.currentRound];
   const isPlaying = room?.status === "playing" && currentRound?.status === "active";
@@ -250,6 +261,11 @@ function PlayPageInner() {
     s.emit(WS_EVENTS.NEXT_ROUND);
   }, [token]);
 
+  const handlePlayAgain = useCallback(() => {
+    const s = getSocket(token);
+    s.emit(WS_EVENTS.PLAY_AGAIN);
+  }, [token]);
+
   const handleLeave = useCallback(() => {
     const s = getSocket(token);
     s.emit(WS_EVENTS.LEAVE_ROOM);
@@ -273,7 +289,8 @@ function PlayPageInner() {
     return (
       <FinalScreen
         payload={finalLb}
-        onPlayAgain={handleCreate}
+        isHost={isHost}
+        onPlayAgain={handlePlayAgain}
         onLeave={handleLeave}
       />
     );
@@ -495,12 +512,11 @@ function PlayPageInner() {
       </div>
 
       {/* Top HUD */}
-      <div className="absolute top-0 inset-x-0 z-20 p-4 flex items-start justify-between gap-4 pointer-events-none">
+      <div className="absolute top-0 inset-x-0 z-20 p-2 md:p-4 flex items-start justify-between gap-2 md:gap-4 pointer-events-none">
         <PlayerBar
           player={me}
           maxScore={maxScore}
           side="left"
-          country={user.avatarSeed?.slice(0, 2)}
           highlight
         />
         <CenterTimer
@@ -508,7 +524,10 @@ function PlayPageInner() {
           roundIndex={room.currentRound}
           totalRounds={room.config.rounds}
         />
-        <PlayerBar player={opponent} maxScore={maxScore} side="right" />
+        {/* Opponent gauge only fits on wider screens */}
+        <div className="hidden md:block">
+          <PlayerBar player={opponent} maxScore={maxScore} side="right" />
+        </div>
       </div>
 
       {/* Leave button */}
@@ -586,20 +605,24 @@ const GuessBox: React.FC<GuessBoxProps> = ({
   const isGuessing = mode === "guessing";
   const isLocked = mode === "locked";
 
-  // Widget grows for hover while guessing + auto-grows during reveal.
+  // Widget grows on hover (desktop) or first touch (mobile) while guessing,
+  // and auto-grows during reveal. Clamped so it never overflows small phones.
   const wide = isReveal || (isGuessing && hovering);
-  const width = wide ? "min(640px, 60vw)" : "340px";
-  const height = wide ? 420 : 220;
+  const width = wide
+    ? "min(640px, calc(100vw - 24px))"
+    : "min(340px, calc(100vw - 24px))";
+  const height = wide ? "min(420px, 48dvh)" : "min(220px, 30dvh)";
 
   const mine = guesses.find((g) => g.userId === meId);
   const guessForMap = mine?.guess ?? guess ?? null;
 
   return (
     <div
-      className="absolute bottom-6 right-6 z-30 pointer-events-auto flex flex-col gap-2"
+      className="absolute bottom-3 right-3 md:bottom-6 md:right-6 z-30 pointer-events-auto flex flex-col gap-2"
       style={{ width, transition: "width 260ms ease-out" }}
       onMouseEnter={() => setHovering(true)}
       onMouseLeave={() => setHovering(false)}
+      onTouchStart={() => setHovering(true)}
     >
       <div
         className={
@@ -888,9 +911,10 @@ const RevealPanel: React.FC<{
 
 const FinalScreen: React.FC<{
   payload: GameEndedPayload;
+  isHost: boolean;
   onPlayAgain: () => void;
   onLeave: () => void;
-}> = ({ payload, onPlayAgain, onLeave }) => {
+}> = ({ payload, isHost, onPlayAgain, onLeave }) => {
   const { t } = useI18n();
   const winner = payload.leaderboard[0];
   return (
@@ -929,7 +953,13 @@ const FinalScreen: React.FC<{
             <Link href="/leaderboard">
               <Button variant="secondary">{t("play.globalRanking")}</Button>
             </Link>
-            <Button onClick={onPlayAgain}>{t("play.playAgain")}</Button>
+            {isHost ? (
+              <Button onClick={onPlayAgain}>{t("play.playAgain")}</Button>
+            ) : (
+              <Badge tone="violet" dot>
+                {t("play.waitingHost")}
+              </Badge>
+            )}
           </div>
         </CardBody>
       </Card>

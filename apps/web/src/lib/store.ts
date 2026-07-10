@@ -8,6 +8,7 @@ interface AuthState {
   token: string | null;
   user: AuthUser | null;
   setAuth: (payload: AuthResponse) => void;
+  updateUser: (patch: Partial<AuthUser>) => void;
   clear: () => void;
 }
 
@@ -18,6 +19,8 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       setAuth: ({ accessToken, user }) =>
         set({ token: accessToken, user }),
+      updateUser: (patch) =>
+        set((s) => (s.user ? { user: { ...s.user, ...patch } } : s)),
       clear: () => set({ token: null, user: null }),
     }),
     { name: "geopin.auth" },
@@ -43,6 +46,17 @@ interface GameState {
   ) => void;
   reset: () => void;
 }
+
+interface UiState {
+  /** True while a round is actually on screen — hides the top nav. */
+  immersive: boolean;
+  setImmersive: (v: boolean) => void;
+}
+
+export const useUiStore = create<UiState>((set) => ({
+  immersive: false,
+  setImmersive: (immersive) => set({ immersive }),
+}));
 
 export const useGameStore = create<GameState>((set) => ({
   room: null,

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Logo, Avatar, Button, Badge } from "@geopin/ui";
-import { useAuthStore } from "@/lib/store";
+import { useAuthStore, useUiStore } from "@/lib/store";
 import { useI18n } from "@/lib/i18n";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { Trophy, Home, Swords, MapPin } from "lucide-react";
@@ -12,10 +12,12 @@ export function Nav() {
   const pathname = usePathname();
   const user = useAuthStore((s) => s.user);
   const clear = useAuthStore((s) => s.clear);
+  const immersive = useUiStore((s) => s.immersive);
   const { t } = useI18n();
 
-  // Immersive full-screen mode for the game routes.
-  if (pathname === "/play" || pathname === "/solo") return null;
+  // Hide only while a round is actually on screen — menus, lobbies and
+  // result screens keep the nav so players can always find their way back.
+  if (immersive) return null;
 
   const links = [
     { href: "/", label: t("nav.home"), icon: Home },
@@ -58,10 +60,14 @@ export function Nav() {
           <LanguageSelector />
           {user ? (
             <>
-              <div className="hidden md:flex items-center gap-2">
+              <Link
+                href="/profile"
+                title={t("nav.profile")}
+                className="flex items-center gap-2 rounded-full md:rounded-lg md:px-2 md:h-9 hover:bg-panel/60 transition"
+              >
                 <Avatar seed={user.avatarSeed || user.username} size={28} />
-                <span className="text-sm">{user.username}</span>
-              </div>
+                <span className="hidden md:inline text-sm">{user.username}</span>
+              </Link>
               <Button variant="ghost" size="sm" onClick={clear}>
                 {t("nav.logout")}
               </Button>

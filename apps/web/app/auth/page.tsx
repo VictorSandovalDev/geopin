@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button, Card, CardBody, CardHeader, CardTitle, Input, Logo, useToast } from "@geopin/ui";
@@ -13,6 +13,7 @@ type Mode = "login" | "register" | "guest";
 
 export default function AuthPage() {
   const router = useRouter();
+  const user = useAuthStore((s) => s.user);
   const setAuth = useAuthStore((s) => s.setAuth);
   const toast = useToast();
   const { t } = useI18n();
@@ -24,6 +25,13 @@ export default function AuthPage() {
     username: "",
     password: "",
   });
+
+  // Already signed in — there's nothing to register or log into here.
+  useEffect(() => {
+    if (user) router.replace("/play");
+  }, [user, router]);
+
+  if (user) return null;
 
   async function submit() {
     setLoading(true);

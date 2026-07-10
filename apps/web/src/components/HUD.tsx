@@ -35,7 +35,7 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
   const { t } = useI18n();
   if (!player) {
     return (
-      <div className="h-16 w-[280px] opacity-40 text-ink-dim text-sm flex items-center justify-center">
+      <div className="h-16 w-[140px] md:w-[280px] opacity-40 text-ink-dim text-sm flex items-center justify-center">
         {t("hud.awaiting")}
       </div>
     );
@@ -56,21 +56,21 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
     >
       <div
         className={
-          "relative rounded-full ring-2 " +
+          "relative rounded-full ring-2 shrink-0 " +
           (highlight ? "ring-brand-cyan" : "ring-white/40")
         }
       >
         <Avatar seed={player.avatarSeed || player.username} size={56} />
       </div>
 
-      <div className="min-w-[240px] max-w-[320px]">
+      <div className="min-w-[130px] md:min-w-[240px] max-w-[320px]">
         <div
           className={
             "flex items-center gap-2 mb-1 " +
             (side === "right" ? "flex-row-reverse" : "")
           }
         >
-          <span className="font-display font-bold uppercase tracking-wider text-white drop-shadow-[0_2px_3px_rgba(0,0,0,0.6)]">
+          <span className="font-display font-bold uppercase tracking-wider text-white drop-shadow-[0_2px_3px_rgba(0,0,0,0.6)] text-sm md:text-base truncate max-w-[120px] md:max-w-none">
             {player.username}
           </span>
           {country && (
@@ -79,7 +79,7 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
             </span>
           )}
         </div>
-        <div className="relative h-7 rounded-full border border-white/30 bg-black/40 backdrop-blur-md overflow-hidden shadow-lg">
+        <div className="relative h-6 md:h-7 rounded-full border border-white/30 bg-black/40 backdrop-blur-md overflow-hidden shadow-lg">
           <div
             className={`absolute inset-y-0 left-0 bg-gradient-to-r ${gradient} transition-all duration-500`}
             style={{ width: `${pct}%` }}
@@ -92,7 +92,7 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
             }}
           />
           <div className="absolute inset-0 flex items-center justify-center">
-            <span className="font-mono font-bold text-white tabular-nums drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
+            <span className="font-mono font-bold text-white tabular-nums drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] text-sm md:text-base">
               {player.totalScore.toLocaleString()}
             </span>
           </div>
@@ -132,8 +132,8 @@ export const CenterTimer: React.FC<CenterTimerProps> = ({
       </div>
       <div
         className={
-          "px-6 h-14 rounded-full border flex items-center justify-center min-w-[120px] " +
-          "bg-black/60 backdrop-blur-md shadow-lift font-mono text-2xl tabular-nums font-bold " +
+          "px-4 md:px-6 h-10 md:h-14 rounded-full border flex items-center justify-center min-w-[90px] md:min-w-[120px] " +
+          "bg-black/60 backdrop-blur-md shadow-lift font-mono text-lg md:text-2xl tabular-nums font-bold " +
           (critical
             ? "border-red-500/60 text-red-300 animate-pulse"
             : "border-white/30 text-white")

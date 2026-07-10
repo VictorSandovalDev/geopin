@@ -14,6 +14,7 @@ export interface CommitGuessInput {
   userId: string;
   guess: LatLng;
   actual: LatLng;
+  mapSizeKm?: number;
 }
 
 /**
@@ -24,9 +25,9 @@ export interface CommitGuessInput {
 export class GameService {
   constructor(private readonly prisma: PrismaService) {}
 
-  scoreGuess(guess: LatLng, actual: LatLng) {
+  scoreGuess(guess: LatLng, actual: LatLng, mapSizeKm?: number) {
     const distanceKm = haversineKm(guess, actual);
-    const score = scoreFromDistance(distanceKm);
+    const score = scoreFromDistance(distanceKm, mapSizeKm);
     return { distanceKm, score };
   }
 
@@ -71,7 +72,11 @@ export class GameService {
   }
 
   async recordGuess(input: CommitGuessInput) {
-    const { distanceKm, score } = this.scoreGuess(input.guess, input.actual);
+    const { distanceKm, score } = this.scoreGuess(
+      input.guess,
+      input.actual,
+      input.mapSizeKm,
+    );
     const round = await this.prisma.round.findFirst({
       where: { gameId: input.gameId, index: input.roundIndex },
     });

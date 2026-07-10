@@ -20,6 +20,21 @@ const en: Dict = {
     logout: "Logout",
     signIn: "Sign in",
     language: "Language",
+    profile: "Profile",
+  },
+  profile: {
+    title: "Your profile",
+    avatarTitle: "Customize your avatar",
+    avatarDesc: "Pick a look — it shows up in lobbies, matches and the leaderboard.",
+    skin: "Skin",
+    eyes: "Eyes",
+    mouth: "Mouth",
+    hair: "Hair & extras",
+    bg: "Background",
+    save: "Save avatar",
+    saved: "Avatar updated!",
+    saveFailed: "Could not save",
+    randomize: "Surprise me",
   },
   home: {
     hero: {
@@ -242,6 +257,21 @@ const es: Dict = {
     logout: "Cerrar sesión",
     signIn: "Iniciar sesión",
     language: "Idioma",
+    profile: "Perfil",
+  },
+  profile: {
+    title: "Tu perfil",
+    avatarTitle: "Personaliza tu avatar",
+    avatarDesc: "Elige tu look — aparece en salas, partidas y el ranking.",
+    skin: "Piel",
+    eyes: "Ojos",
+    mouth: "Boca",
+    hair: "Pelo y extras",
+    bg: "Fondo",
+    save: "Guardar avatar",
+    saved: "¡Avatar actualizado!",
+    saveFailed: "No se pudo guardar",
+    randomize: "Sorpréndeme",
   },
   home: {
     hero: {

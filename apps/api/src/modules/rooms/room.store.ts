@@ -29,7 +29,11 @@ export class RoomStore {
     await this.redis.del(KEY(code), DB_KEY(code));
   }
 
-  async setGameId(code: string, gameId: string): Promise<void> {
+  async setGameId(code: string, gameId: string | null): Promise<void> {
+    if (gameId === null) {
+      await this.redis.del(DB_KEY(code));
+      return;
+    }
     await this.redis.set(DB_KEY(code), gameId, "EX", TTL_SECONDS);
   }
 

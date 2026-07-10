@@ -1,4 +1,4 @@
-import { MAX_ROUND_SCORE } from "@geopin/types";
+import { MAX_ROUND_SCORE, WORLD_MAP_SIZE_KM } from "@geopin/types";
 
 const EARTH_RADIUS_KM = 6371;
 
@@ -23,18 +23,39 @@ export function haversineKm(a: LatLng, b: LatLng): number {
 }
 
 /**
- * GeoGuessr-style decay scoring. The map scale tunes how fast the score
- * drops off — roughly 2000 km for "world" maps.
+ * GeoGuessr-style decay scoring, scaled to the size of the played region:
  *
- *   score = MAX * exp(-distanceKm / mapScaleKm)
+ *   score = MAX * exp(-10 * distanceKm / mapSizeKm)
  *
- * A 0 km guess yields MAX_ROUND_SCORE; a guess across the world trends to 0.
+ * With the world size (~14 916 km) a 500 km miss is worth ~3 575 and a
+ * 2 500 km miss ~935. Country packs pass their own (much smaller) size so
+ * regional games stay demanding — being 500 km off inside Colombia
+ * (~1 600 km) yields ~220 instead of the old ~3 890.
  */
 export function scoreFromDistance(
   distanceKm: number,
-  mapScaleKm = 2000,
+  mapSizeKm = WORLD_MAP_SIZE_KM,
 ): number {
   if (distanceKm < 0.05) return MAX_ROUND_SCORE;
-  const raw = MAX_ROUND_SCORE * Math.exp(-distanceKm / mapScaleKm);
+  const size = Math.min(Math.max(mapSizeKm, 200), WORLD_MAP_SIZE_KM);
+  const raw = MAX_ROUND_SCORE * Math.exp((-10 * distanceKm) / size);
   return Math.max(0, Math.round(raw));
+}
+
+/**
+ * Scoring scale for a set of round locations: the largest pairwise distance
+ * approximates the diagonal of the played region. Falls back to world size
+ * when there aren't enough points to measure.
+ */
+export function mapSizeFromLocations(points: LatLng[]): number {
+  if (points.length < 2) return WORLD_MAP_SIZE_KM;
+  let max = 0;
+  for (let i = 0; i < points.length; i++) {
+    for (let j = i + 1; j < points.length; j++) {
+      max = Math.max(max, haversineKm(points[i]!, points[j]!));
+    }
+  }
+  // A tight cluster still deserves a playable curve; ~1.5× spread gives
+  // headroom since N samples underestimate the true region size.
+  return Math.min(Math.max(max * 1.5, 200), WORLD_MAP_SIZE_KM);
 }

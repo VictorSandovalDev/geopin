@@ -1,20 +1,49 @@
 "use client";
 
 import type { LatLng, Location, MapPack } from "@geopin/types";
-import { MAX_ROUND_SCORE } from "@geopin/types";
+import { MAX_ROUND_SCORE, WORLD_MAP_SIZE_KM } from "@geopin/types";
 import { LOCATION_DATASET } from "./solo-dataset";
-import { pickRandomPanoramas } from "./random-streetview";
+import { pickRandomPanoramas, COUNTRY_BBOX } from "./random-streetview";
+import { haversineKm } from "./haversine";
 
 /**
  * Client-side solo engine. Everything here runs without the backend so the
  * game is playable with just the static site (plus the Google key when set).
  */
 
-/** Mirror of the backend scoring curve — exponential decay over distance. */
-export function scoreFromDistance(distanceKm: number, mapScaleKm = 2000): number {
+/**
+ * Mirror of the backend scoring curve — GeoGuessr-style decay scaled to the
+ * size of the played region: score = MAX * exp(-10 * d / mapSizeKm).
+ */
+export function scoreFromDistance(
+  distanceKm: number,
+  mapSizeKm = WORLD_MAP_SIZE_KM,
+): number {
   if (distanceKm < 0.05) return MAX_ROUND_SCORE;
-  const raw = MAX_ROUND_SCORE * Math.exp(-distanceKm / mapScaleKm);
+  const size = Math.min(Math.max(mapSizeKm, 200), WORLD_MAP_SIZE_KM);
+  const raw = MAX_ROUND_SCORE * Math.exp((-10 * distanceKm) / size);
   return Math.max(0, Math.round(raw));
+}
+
+/**
+ * Scoring scale for a pack: diagonal of the union of its country bboxes.
+ * World (or unknown countries) → world size.
+ */
+export function packMapSizeKm(countries: string[] | null | undefined): number {
+  if (!countries?.length) return WORLD_MAP_SIZE_KM;
+  const boxes = countries
+    .map((c) => COUNTRY_BBOX[c])
+    .filter((b): b is NonNullable<typeof b> => !!b);
+  if (!boxes.length) return WORLD_MAP_SIZE_KM;
+  const north = Math.max(...boxes.map((b) => b.north));
+  const south = Math.min(...boxes.map((b) => b.south));
+  const east = Math.max(...boxes.map((b) => b.east));
+  const west = Math.min(...boxes.map((b) => b.west));
+  const diagonal = haversineKm(
+    { lat: south, lng: west },
+    { lat: north, lng: east },
+  );
+  return Math.min(Math.max(diagonal, 200), WORLD_MAP_SIZE_KM);
 }
 
 /** Built-in packs, mirrored from the API so solo works offline. */

@@ -15,11 +15,13 @@ import {
 import type { LatLng, Location } from "@geopin/types";
 import { MAX_ROUND_SCORE } from "@geopin/types";
 import { useI18n } from "@/lib/i18n";
+import { useUiStore } from "@/lib/store";
 import { haversineKm, formatDistance } from "@/lib/haversine";
 import {
   SOLO_PACKS,
   SOLO_DEFAULTS,
   scoreFromDistance,
+  packMapSizeKm,
   pickSoloLocations,
   getBestScore,
   recordGame,
@@ -67,6 +69,14 @@ export default function SoloPage() {
 
   useEffect(() => setBest(getBestScore(packId)), [packId, phase]);
 
+  // Hide the top nav only while a round is on screen; setup and results
+  // keep it so the player can navigate away.
+  const setImmersive = useUiStore((s) => s.setImmersive);
+  useEffect(() => {
+    setImmersive(phase === "playing" || phase === "reveal");
+    return () => setImmersive(false);
+  }, [phase, setImmersive]);
+
   const pack = useMemo(
     () => SOLO_PACKS.find((p) => p.id === packId) ?? SOLO_PACKS[0]!,
     [packId],
@@ -84,7 +94,10 @@ export default function SoloPage() {
       const loc = locations[roundIndex];
       if (!loc || phaseRef.current !== "playing") return;
       const distanceKm = finalGuess ? haversineKm(finalGuess, loc) : null;
-      const score = distanceKm != null ? scoreFromDistance(distanceKm) : 0;
+      const score =
+        distanceKm != null
+          ? scoreFromDistance(distanceKm, packMapSizeKm(pack.countries))
+          : 0;
       setResults((prev) => [
         ...prev,
         { location: loc, guess: finalGuess, distanceKm, score },
@@ -92,7 +105,7 @@ export default function SoloPage() {
       deadlineRef.current = null;
       setPhase("reveal");
     },
-    [locations, roundIndex],
+    [locations, roundIndex, pack],
   );
 
   // Keep the latest guess reachable from the timer without re-arming it.
@@ -213,7 +226,7 @@ export default function SoloPage() {
       </div>
 
       {/* Top HUD */}
-      <div className="absolute top-0 inset-x-0 z-20 p-4 flex items-start justify-between gap-4 pointer-events-none">
+      <div className="absolute top-0 inset-x-0 z-20 p-2 md:p-4 flex items-start justify-between gap-2 md:gap-4 pointer-events-none">
         <div className="pointer-events-auto flex items-center gap-3 bg-black/50 backdrop-blur-md border border-white/20 rounded-full pl-4 pr-5 h-12">
           <Trophy className="w-4 h-4 text-brand-gold" />
           <div className="flex flex-col leading-tight">
@@ -438,15 +451,18 @@ function SoloGuessBox(props: {
   const [hovering, setHovering] = useState(false);
 
   const wide = isReveal || hovering;
-  const width = wide ? "min(640px, 90vw)" : "min(340px, 80vw)";
-  const height = wide ? "min(420px, 45vh)" : 220;
+  const width = wide
+    ? "min(640px, calc(100vw - 24px))"
+    : "min(340px, calc(100vw - 24px))";
+  const height = wide ? "min(420px, 48dvh)" : "min(220px, 30dvh)";
 
   return (
     <div
-      className="absolute bottom-6 right-6 z-30 pointer-events-auto flex flex-col gap-2"
+      className="absolute bottom-3 right-3 md:bottom-6 md:right-6 z-30 pointer-events-auto flex flex-col gap-2"
       style={{ width, transition: "width 260ms ease-out" }}
       onMouseEnter={() => setHovering(true)}
       onMouseLeave={() => setHovering(false)}
+      onTouchStart={() => setHovering(true)}
     >
       <div
         className={

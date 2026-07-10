@@ -13,6 +13,7 @@ import {
   type RoomState,
   type StartGamePayload,
 } from "@geopin/types";
+import { mapSizeFromLocations } from "../../common/haversine";
 import { RoomStore } from "./room.store";
 import { LocationsService } from "../locations/locations.service";
 import { GameService } from "../game/game.service";
@@ -28,6 +29,19 @@ export class RoomsService {
     private readonly game: GameService,
     private readonly prisma: PrismaService,
   ) {}
+
+  /** Avatar seed stored on the account — falls back to the user id. */
+  async avatarSeedOf(userId: string): Promise<string> {
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { avatarSeed: true },
+      });
+      return user?.avatarSeed || userId;
+    } catch {
+      return userId;
+    }
+  }
 
   /** Create-or-get an open room. A null `code` mints a fresh one. */
   async ensure(code: string | null, host: Player): Promise<RoomState> {
@@ -72,6 +86,7 @@ export class RoomsService {
     if (existing) {
       existing.connected = true;
       existing.username = player.username;
+      existing.avatarSeed = player.avatarSeed;
     } else {
       state.players.push({ ...player, isHost: false, ready: false, connected: true });
     }
@@ -158,7 +173,14 @@ export class RoomsService {
       });
     }
 
-    state.config = { ...state.config, rounds, roundSeconds, difficulty, packId };
+    state.config = {
+      ...state.config,
+      rounds,
+      roundSeconds,
+      difficulty,
+      packId,
+      mapSizeKm: mapSizeFromLocations(locations),
+    };
     state.status = "playing";
     state.currentRound = 0;
     state.rounds = locations.map((loc, i) => ({
@@ -212,7 +234,11 @@ export class RoomsService {
     const player = state.players.find((p) => p.userId === userId);
     if (!player) throw new NotFoundException("player not in room");
 
-    const { distanceKm, score } = this.game.scoreGuess(guess, round.location);
+    const { distanceKm, score } = this.game.scoreGuess(
+      guess,
+      round.location,
+      state.config.mapSizeKm,
+    );
     round.guesses.push({
       userId,
       username: player.username,
@@ -233,6 +259,7 @@ export class RoomsService {
           userId,
           guess,
           actual: round.location,
+          mapSizeKm: state.config.mapSizeKm,
         })
         .catch((err) =>
           this.logger.warn(`recordGuess failed: ${(err as Error).message}`),
@@ -277,6 +304,29 @@ export class RoomsService {
     state.rounds[nextIndex]!.status = "active";
     await this.store.save(state);
     return { state, ended: false };
+  }
+
+  /**
+   * Reset a finished game back to the lobby so the same group can play
+   * another match without re-creating (and re-sharing) a room.
+   */
+  async playAgain(code: string, userId: string): Promise<RoomState> {
+    const state = await this.mustGet(code);
+    if (state.hostId !== userId)
+      throw new BadRequestException("only host can restart the game");
+    if (state.status !== "finished")
+      throw new BadRequestException("game is not finished");
+
+    state.status = "lobby";
+    state.currentRound = 0;
+    state.rounds = [];
+    for (const p of state.players) {
+      p.totalScore = 0;
+      p.ready = false;
+    }
+    await this.store.setGameId(state.code, null);
+    await this.store.save(state);
+    return state;
   }
 
   async mustGet(code: string): Promise<RoomState> {

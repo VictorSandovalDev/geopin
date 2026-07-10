@@ -82,7 +82,7 @@ export class RoomsGateway
     const player: Player = {
       userId: user.sub,
       username: user.username,
-      avatarSeed: user.sub,
+      avatarSeed: await this.rooms.avatarSeedOf(user.sub),
       totalScore: 0,
       connected: true,
       ready: false,
@@ -205,6 +205,22 @@ export class RoomsGateway
       this.startRoundTimer(code);
     }
     this.broadcastState(code, next);
+  }
+
+  @UseGuards(WsJwtGuard)
+  @SubscribeMessage(WS_EVENTS.PLAY_AGAIN)
+  async onPlayAgain(@ConnectedSocket() client: Socket) {
+    const user = client.data.user as { sub: string };
+    const code = client.data.roomCode as string | undefined;
+    if (!code) return;
+    try {
+      const state = await this.rooms.playAgain(code, user.sub);
+      this.broadcastState(code, state);
+      return { ok: true };
+    } catch (err) {
+      client.emit(WS_EVENTS.ERROR, { code: (err as Error).message });
+      return { ok: false };
+    }
   }
 
   @UseGuards(WsJwtGuard)
