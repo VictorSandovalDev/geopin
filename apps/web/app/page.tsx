@@ -68,9 +68,9 @@ export default function HomePage() {
   }, []);
 
   return (
-    // overflow-x-clip: the decorative hero/CTA blobs extend past the
-    // viewport and otherwise add horizontal scroll on phones.
-    <div className="flex flex-col gap-28 md:gap-36 py-8 overflow-x-clip">
+    // Horizontal overflow from the decorative glows is clipped at the body
+    // (viewport edge) — clipping here would visibly cut them on desktop.
+    <div className="flex flex-col gap-28 md:gap-36 py-8">
       <Hero />
       <LivePreview />
       <HowItWorks />
