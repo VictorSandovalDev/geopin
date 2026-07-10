@@ -170,6 +170,16 @@ export function configFromLegacySeed(seed: string): AvatarConfig {
 
 /* ------------------------------------------------------------------ */
 
+/**
+ * Optional app-provided renderer (e.g. a 3D-snapshot thumbnail). When set,
+ * Avatar delegates the picture to it and only keeps the frame/ring shell.
+ * Falls back to the built-in Mii SVG when null or while unavailable.
+ */
+export const AvatarImageContext = React.createContext<React.FC<{
+  seed: string;
+  size: number;
+}> | null>(null);
+
 export const Avatar: React.FC<AvatarProps> = ({
   seed,
   size = 40,
@@ -177,10 +187,27 @@ export const Avatar: React.FC<AvatarProps> = ({
   className,
   ...props
 }) => {
+  const AppImage = React.useContext(AvatarImageContext);
   const config = React.useMemo(
     () => parseAvatarSeed(seed) ?? configFromLegacySeed(seed),
     [seed],
   );
+
+  if (AppImage) {
+    return (
+      <div
+        className={cn(
+          "inline-flex items-center justify-center overflow-hidden rounded-full",
+          ring && "ring-2 ring-brand-cyan/60 ring-offset-2 ring-offset-void",
+          className,
+        )}
+        style={{ width: size, height: size }}
+        {...props}
+      >
+        <AppImage seed={seed} size={size} />
+      </div>
+    );
+  }
 
   return (
     <div

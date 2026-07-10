@@ -4,6 +4,7 @@ export * from "./Card";
 export * from "./Input";
 export * from "./Badge";
 export * from "./Avatar";
+export * from "./Avatar3DConfig";
 export * from "./Modal";
 export * from "./Toast";
 export * from "./Leaderboard";

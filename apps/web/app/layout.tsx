@@ -3,6 +3,7 @@ import "leaflet/dist/leaflet.css";
 import "./globals.css";
 import { ToastProvider } from "@geopin/ui";
 import { Nav } from "@/components/Nav";
+import { AvatarThumbProvider } from "@/components/AvatarThumb3D";
 import { I18nProvider } from "@/lib/i18n";
 
 export const metadata: Metadata = {
@@ -24,10 +25,12 @@ export default function RootLayout({
       <body className="min-h-screen overflow-x-clip">
         <I18nProvider>
           <ToastProvider>
-            <Nav />
-            <main className="mx-auto w-full max-w-7xl px-4 md:px-6 py-6">
-              {children}
-            </main>
+            <AvatarThumbProvider>
+              <Nav />
+              <main className="mx-auto w-full max-w-7xl px-4 md:px-6 py-6">
+                {children}
+              </main>
+            </AvatarThumbProvider>
           </ToastProvider>
         </I18nProvider>
       </body>

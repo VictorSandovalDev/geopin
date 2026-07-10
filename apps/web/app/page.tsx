@@ -17,7 +17,7 @@ import { useAuthStore } from "@/lib/store";
 import { SOLO_PACKS } from "@/lib/solo";
 import { useI18n } from "@/lib/i18n";
 import type { LeaderboardEntry, MapPack } from "@geopin/types";
-import { configFromLegacySeed, parseAvatarSeed } from "@geopin/ui";
+import { avatar3DFromSeed } from "@geopin/ui";
 const Globe3D = dynamic(
   () => import("@/components/Globe3D").then((m) => m.Globe3D),
   { ssr: false },
@@ -97,8 +97,7 @@ function Hero() {
   // GeoGuessr-style. Config resolves from the same seed the 2D avatar uses.
   const miiConfig = useMemo(() => {
     if (!user) return null;
-    const seed = user.avatarSeed || user.username;
-    return parseAvatarSeed(seed) ?? configFromLegacySeed(seed);
+    return avatar3DFromSeed(user.avatarSeed || user.username);
   }, [user]);
   return (
     <section className="relative grid md:grid-cols-2 gap-12 items-center">

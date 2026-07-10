@@ -4,22 +4,20 @@ import dynamic from "next/dynamic";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  Avatar,
   AVATAR_BGS,
-  AVATAR_COUNTS,
   AVATAR_HAIR_COLORS,
   AVATAR_SHIRTS,
   AVATAR_SKINS,
+  AVATAR3D_COUNTS,
   Button,
   Card,
   CardBody,
   CardHeader,
   CardTitle,
-  buildAvatarSeed,
-  configFromLegacySeed,
-  parseAvatarSeed,
+  avatar3DFromSeed,
+  buildAvatar3DSeed,
   useToast,
-  type AvatarConfig,
+  type Avatar3DConfig,
 } from "@geopin/ui";
 import type { UserProfile } from "@geopin/types";
 import { api } from "@/lib/api";
@@ -32,23 +30,34 @@ const Avatar3D = dynamic(
   { ssr: false },
 );
 
-type Category = keyof AvatarConfig;
+type Category = keyof Avatar3DConfig;
 
-/** Editor sections: color swatches for palettes, mini-previews otherwise. */
+/**
+ * Editor sections: color swatches for palettes, emoji chips for GLB parts
+ * (the live 3D preview shows every change instantly).
+ */
 const CATEGORIES: Array<{
   key: Category;
   swatches?: Array<[string, string]> | string[];
+  emoji?: string;
+  options?: string[]; // per-option emoji override (e.g. expressions)
+  hasNone?: boolean; // option 0 wears nothing
 }> = [
+  { key: "pose", options: ["🧍", "👋", "🙌"] },
   { key: "skin", swatches: AVATAR_SKINS },
-  { key: "head" },
-  { key: "hair" },
+  { key: "hair", emoji: "💇", hasNone: true },
   { key: "hairColor", swatches: AVATAR_HAIR_COLORS },
-  { key: "eyes" },
-  { key: "brows" },
-  { key: "nose" },
-  { key: "mouth" },
-  { key: "extra" },
-  { key: "shirt", swatches: AVATAR_SHIRTS },
+  { key: "emotion", options: ["🙂", "😄", "😠"] },
+  { key: "hat", emoji: "🎩", hasNone: true },
+  { key: "glasses", emoji: "👓", hasNone: true },
+  { key: "top", options: ["👕", "🧥", "🧥", "🦸", "🥋"] },
+  { key: "topColor", swatches: AVATAR_SHIRTS },
+  { key: "bottom", options: ["👖", "👖", "🩳"] },
+  { key: "shoes", options: ["👟", "🥿", "🥿", "🦶"] },
+  {
+    key: "extra",
+    options: ["∅", "🧔", "🧔", "🎧", "🤡", "👶", "🧤", "🧤", "🧦"],
+  },
   { key: "bg", swatches: AVATAR_BGS },
 ];
 
@@ -65,12 +74,12 @@ export default function ProfilePage() {
   const user = useAuthStore((s) => s.user);
   const updateUser = useAuthStore((s) => s.updateUser);
 
-  const initial = useMemo<AvatarConfig>(() => {
-    const seed = user?.avatarSeed || user?.username || "geopin";
-    return parseAvatarSeed(seed) ?? configFromLegacySeed(seed);
-  }, [user?.avatarSeed, user?.username]);
+  const initial = useMemo<Avatar3DConfig>(
+    () => avatar3DFromSeed(user?.avatarSeed || user?.username || "geopin"),
+    [user?.avatarSeed, user?.username],
+  );
 
-  const [config, setConfig] = useState<AvatarConfig>(initial);
+  const [config, setConfig] = useState<Avatar3DConfig>(initial);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => setConfig(initial), [initial]);
@@ -81,7 +90,7 @@ export default function ProfilePage() {
 
   if (!hydrated || !token || !user) return null;
 
-  const seed = buildAvatarSeed(config);
+  const seed = buildAvatar3DSeed(config);
   const dirty = seed !== user.avatarSeed;
 
   const save = async () => {
@@ -108,11 +117,11 @@ export default function ProfilePage() {
   const randomize = () =>
     setConfig(
       Object.fromEntries(
-        (Object.keys(AVATAR_COUNTS) as Category[]).map((k) => [
+        (Object.keys(AVATAR3D_COUNTS) as Category[]).map((k) => [
           k,
-          Math.floor(Math.random() * AVATAR_COUNTS[k]),
+          Math.floor(Math.random() * AVATAR3D_COUNTS[k]),
         ]),
-      ) as unknown as AvatarConfig,
+      ) as unknown as Avatar3DConfig,
     );
 
   return (
@@ -153,19 +162,21 @@ export default function ProfilePage() {
 
             {/* Pickers */}
             <div className="flex flex-col gap-5">
-              {CATEGORIES.map(({ key, swatches }) => (
+              {CATEGORIES.map(({ key, swatches, emoji, options, hasNone }) => (
                 <div key={key}>
                   <div className="text-xs uppercase tracking-wider text-ink-muted mb-2">
                     {t(`profile.${key}`)}
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {Array.from({ length: AVATAR_COUNTS[key] }, (_, i) => {
+                    {Array.from({ length: AVATAR3D_COUNTS[key] }, (_, i) => {
                       const active = config[key] === i;
+                      const isNone = (hasNone && i === 0) || options?.[i] === "∅";
                       return (
                         <button
                           key={i}
                           onClick={() => setConfig((c) => ({ ...c, [key]: i }))}
                           aria-pressed={active}
+                          title={isNone ? t("profile.none") : undefined}
                           className={
                             "rounded-full p-0.5 transition " +
                             (active
@@ -183,10 +194,20 @@ export default function ProfilePage() {
                               }}
                             />
                           ) : (
-                            <Avatar
-                              seed={buildAvatarSeed({ ...config, [key]: i })}
-                              size={44}
-                            />
+                            <span className="flex w-9 h-9 md:w-10 md:h-10 rounded-full items-center justify-center bg-panel/70 text-lg select-none">
+                              {isNone ? (
+                                <span className="text-ink-dim text-sm">∅</span>
+                              ) : (
+                                <>
+                                  {options?.[i] ?? emoji}
+                                  {!options && (
+                                    <span className="text-[10px] text-ink-dim ml-0.5">
+                                      {i}
+                                    </span>
+                                  )}
+                                </>
+                              )}
+                            </span>
                           )}
                         </button>
                       );
