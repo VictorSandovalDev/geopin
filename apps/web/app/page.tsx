@@ -21,6 +21,21 @@ const Globe3D = dynamic(
   () => import("@/components/Globe3D").then((m) => m.Globe3D),
   { ssr: false },
 );
+const StreetView = dynamic(
+  () => import("@/components/StreetView").then((m) => m.StreetView),
+  { ssr: false },
+);
+
+const GOOGLE_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY ?? "";
+
+/** Photogenic, well-covered spots for the home-page live demo. */
+const DEMO_SPOTS = [
+  { id: "demo_cartagena", lat: 10.42364, lng: -75.55098 }, // Cartagena old town
+  { id: "demo_tokyo", lat: 35.65951, lng: 139.70049 },     // Shibuya
+  { id: "demo_nyc", lat: 40.75797, lng: -73.98554 },       // Times Square
+  { id: "demo_paris", lat: 48.85837, lng: 2.29448 },       // Eiffel Tower
+  { id: "demo_baires", lat: -34.63451, lng: -58.36309 },   // La Boca
+];
 
 import {
   Zap,
@@ -53,7 +68,9 @@ export default function HomePage() {
   }, []);
 
   return (
-    <div className="flex flex-col gap-28 md:gap-36 py-8">
+    // overflow-x-clip: the decorative hero/CTA blobs extend past the
+    // viewport and otherwise add horizontal scroll on phones.
+    <div className="flex flex-col gap-28 md:gap-36 py-8 overflow-x-clip">
       <Hero />
       <LivePreview />
       <HowItWorks />
@@ -147,6 +164,12 @@ const Divider = () => <span className="w-px h-8 bg-border" />;
 
 function LivePreview() {
   const { t } = useI18n();
+  // Pick the spot after mount so the static build and hydration agree.
+  const [spot, setSpot] = useState<(typeof DEMO_SPOTS)[number] | null>(null);
+  useEffect(() => {
+    setSpot(DEMO_SPOTS[Math.floor(Math.random() * DEMO_SPOTS.length)]!);
+  }, []);
+
   return (
     <section className="relative">
       <SectionHeader
@@ -155,64 +178,33 @@ function LivePreview() {
         subtitle={t("home.preview.subtitle")}
       />
 
-      <div className="relative aspect-[16/9] rounded-3xl overflow-hidden border border-border shadow-lift bg-grad-night">
-        {/* Fake street view background */}
-        <div
-          className="absolute inset-0"
-          style={{
-            backgroundImage:
-              "linear-gradient(120deg, #1A2240 0%, #141B33 40%, #232C4F 100%)",
-          }}
-        />
-        <div className="absolute inset-0 opacity-60 pointer-events-none">
-          <svg viewBox="0 0 1600 900" className="w-full h-full">
-            <defs>
-              <linearGradient id="sky" x1="0" x2="0" y1="0" y2="1">
-                <stop offset="0" stopColor="#4db0ff" stopOpacity="0.3" />
-                <stop offset="0.6" stopColor="#9ac7ff" stopOpacity="0.15" />
-                <stop offset="1" stopColor="#080B1A" stopOpacity="0" />
-              </linearGradient>
-              <linearGradient id="ground" x1="0" x2="0" y1="0" y2="1">
-                <stop offset="0" stopColor="#2E3960" stopOpacity="0.9" />
-                <stop offset="1" stopColor="#080B1A" stopOpacity="1" />
-              </linearGradient>
-            </defs>
-            <rect width="1600" height="540" fill="url(#sky)" />
-            <rect y="540" width="1600" height="360" fill="url(#ground)" />
-            <polygon
-              points="200,540 400,300 450,540"
-              fill="#141B33"
-              opacity="0.8"
+      <div className="relative aspect-[16/10] md:aspect-[16/9] rounded-3xl overflow-hidden border border-border shadow-lift bg-grad-night">
+        {/* Real, draggable Street View — this IS the game. */}
+        <div className="absolute inset-0">
+          {GOOGLE_KEY && spot ? (
+            <StreetView
+              key={spot.id}
+              location={spot}
+              allowPan
+              allowZoom={false}
             />
-            <polygon
-              points="420,540 640,340 680,540"
-              fill="#1A2240"
-              opacity="0.9"
+          ) : (
+            <div
+              className="absolute inset-0"
+              style={{
+                backgroundImage:
+                  "linear-gradient(120deg, #1A2240 0%, #141B33 40%, #232C4F 100%)",
+              }}
             />
-            <polygon
-              points="900,540 1100,240 1160,540"
-              fill="#141B33"
-              opacity="0.8"
-            />
-            <polygon
-              points="1100,540 1300,380 1360,540"
-              fill="#1A2240"
-              opacity="0.9"
-            />
-            <path
-              d="M0 600 C 400 580, 1200 620, 1600 600 L1600 900 L0 900 Z"
-              fill="#0E1329"
-              opacity="0.5"
-            />
-          </svg>
+          )}
         </div>
 
-        {/* Top HUD */}
-        <div className="absolute top-0 inset-x-0 p-4 flex items-start justify-between gap-4">
+        {/* Top HUD (decorative, lets clicks through to the panorama) */}
+        <div className="absolute top-0 inset-x-0 p-3 md:p-4 flex items-start justify-between gap-2 md:gap-4 pointer-events-none">
           <MockPlayerBar side="left" name="VICTOR" score={6400} color="emerald" />
-          <div className="flex flex-col items-center gap-2 pointer-events-none">
+          <div className="hidden sm:flex flex-col items-center gap-2">
             <div className="px-3 h-7 rounded-full bg-black/50 backdrop-blur-md border border-white/20 flex items-center gap-2 text-[11px] uppercase tracking-widest text-white/80">
-              <span>round</span>
+              <span>{t("hud.round")}</span>
               <span className="text-brand-cyan font-semibold">3</span>
               <span className="text-white/50">/</span>
               <span>5</span>
@@ -221,54 +213,41 @@ function LivePreview() {
               01:42
             </div>
           </div>
-          <MockPlayerBar
-            side="right"
-            name="LINA"
-            score={4200}
-            color="violet"
-          />
+          <div className="hidden md:block">
+            <MockPlayerBar side="right" name="LINA" score={4200} color="violet" />
+          </div>
         </div>
 
-        {/* Mini-map + GUESS */}
-        <div className="absolute bottom-6 right-6 w-72 flex flex-col gap-2">
-          <div className="relative h-40 rounded-xl border-2 border-white/30 bg-ink/5 overflow-hidden">
-            <svg viewBox="0 0 300 160" className="w-full h-full opacity-80">
-              <rect width="300" height="160" fill="#FFFFFF" />
-              <path
-                d="M0 80 Q 80 40 160 70 T 300 60"
-                stroke="#22E9FF"
-                strokeWidth="1.5"
-                fill="none"
-                strokeDasharray="3,3"
-              />
-              <rect x="60" y="40" width="70" height="40" fill="#E8EEF7" />
-              <rect x="160" y="60" width="90" height="40" fill="#E8EEF7" />
-              <rect x="30" y="100" width="60" height="30" fill="#E8EEF7" />
-              <line x1="0" y1="90" x2="300" y2="90" stroke="#DAE0EE" />
-              <line x1="150" y1="0" x2="150" y2="160" stroke="#DAE0EE" />
-            </svg>
-            <div className="absolute left-[32%] top-[45%]">
-              <div className="w-4 h-4 rounded-full bg-brand-cyan ring-2 ring-void animate-pulse-ring" />
+        {/* drag hint */}
+        {GOOGLE_KEY && (
+          <div className="absolute bottom-4 left-4 md:bottom-6 md:left-6 pointer-events-none">
+            <div className="px-3 h-8 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-white/80 text-xs flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-brand-cyan animate-pulse" />
+              {t("home.preview.dragHint")}
             </div>
-            <div className="absolute left-[58%] top-[60%]">
-              <div className="w-4 h-4 rounded-full bg-brand-gold ring-2 ring-void" />
-            </div>
-            <svg
-              className="absolute inset-0 pointer-events-none"
-              viewBox="0 0 300 160"
-            >
-              <line
-                x1="96"
-                y1="72"
-                x2="174"
-                y2="96"
-                stroke="#22E9FF"
-                strokeWidth="2"
-                strokeDasharray="4,4"
-              />
-            </svg>
           </div>
-          <div className="h-12 rounded-xl bg-gradient-to-b from-emerald-400 to-emerald-600 text-void font-display font-bold text-sm tracking-widest uppercase flex items-center justify-center">
+        )}
+
+        {/* Mini-map + GUESS (decorative) */}
+        <div className="absolute bottom-4 right-4 md:bottom-6 md:right-6 w-44 md:w-72 flex-col gap-2 pointer-events-none hidden sm:flex">
+          <div className="relative h-24 md:h-40 rounded-xl border-2 border-white/40 overflow-hidden shadow-lift">
+            <svg viewBox="0 0 300 160" className="w-full h-full">
+              <rect width="300" height="160" fill="#F4F7FC" />
+              <rect x="60" y="38" width="72" height="44" rx="3" fill="#E2E9F4" />
+              <rect x="164" y="58" width="92" height="42" rx="3" fill="#E2E9F4" />
+              <rect x="28" y="98" width="62" height="34" rx="3" fill="#E2E9F4" />
+              <line x1="0" y1="90" x2="300" y2="90" stroke="#CBD5E6" strokeWidth="3" />
+              <line x1="150" y1="0" x2="150" y2="160" stroke="#CBD5E6" strokeWidth="3" />
+              <line x1="96" y1="72" x2="174" y2="96" stroke="#22B8DD" strokeWidth="2.5" strokeDasharray="5,4" />
+            </svg>
+            <div className="absolute left-[30%] top-[42%]">
+              <div className="w-3.5 h-3.5 rounded-full bg-brand-cyan ring-2 ring-white shadow" />
+            </div>
+            <div className="absolute left-[56%] top-[57%]">
+              <div className="w-3.5 h-3.5 rounded-full bg-brand-gold ring-2 ring-white shadow" />
+            </div>
+          </div>
+          <div className="h-10 md:h-12 rounded-xl bg-gradient-to-b from-emerald-400 to-emerald-600 text-void font-display font-bold text-sm tracking-widest uppercase flex items-center justify-center shadow-lift">
             GUESS
           </div>
         </div>

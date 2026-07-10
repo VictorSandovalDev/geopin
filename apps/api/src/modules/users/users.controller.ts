@@ -16,7 +16,7 @@ class UpdateMeDto {
   @IsOptional()
   @IsString()
   @MaxLength(64)
-  @Matches(/^av1:\d+\.\d+\.\d+\.\d+\.\d+$/, {
+  @Matches(/^av[12]:\d+(\.\d+){4,10}$/, {
     message: "avatarSeed must be a valid avatar config",
   })
   avatarSeed?: string;

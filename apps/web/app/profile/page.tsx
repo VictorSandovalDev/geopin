@@ -6,6 +6,8 @@ import {
   Avatar,
   AVATAR_BGS,
   AVATAR_COUNTS,
+  AVATAR_HAIR_COLORS,
+  AVATAR_SHIRTS,
   AVATAR_SKINS,
   Button,
   Card,
@@ -26,7 +28,27 @@ import { Dices } from "lucide-react";
 
 type Category = keyof AvatarConfig;
 
-const CATEGORIES: Category[] = ["skin", "eyes", "mouth", "hair", "bg"];
+/** Editor sections: color swatches for palettes, mini-previews otherwise. */
+const CATEGORIES: Array<{
+  key: Category;
+  swatches?: Array<[string, string]> | string[];
+}> = [
+  { key: "skin", swatches: AVATAR_SKINS },
+  { key: "head" },
+  { key: "hair" },
+  { key: "hairColor", swatches: AVATAR_HAIR_COLORS },
+  { key: "eyes" },
+  { key: "brows" },
+  { key: "nose" },
+  { key: "mouth" },
+  { key: "extra" },
+  { key: "shirt", swatches: AVATAR_SHIRTS },
+  { key: "bg", swatches: AVATAR_BGS },
+];
+
+function swatchColors(s: [string, string] | string): [string, string] {
+  return Array.isArray(s) ? s : [s, s];
+}
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -77,27 +99,28 @@ export default function ProfilePage() {
   };
 
   const randomize = () =>
-    setConfig({
-      skin: Math.floor(Math.random() * AVATAR_COUNTS.skin),
-      eyes: Math.floor(Math.random() * AVATAR_COUNTS.eyes),
-      mouth: Math.floor(Math.random() * AVATAR_COUNTS.mouth),
-      hair: Math.floor(Math.random() * AVATAR_COUNTS.hair),
-      bg: Math.floor(Math.random() * AVATAR_COUNTS.bg),
-    });
+    setConfig(
+      Object.fromEntries(
+        (Object.keys(AVATAR_COUNTS) as Category[]).map((k) => [
+          k,
+          Math.floor(Math.random() * AVATAR_COUNTS[k]),
+        ]),
+      ) as unknown as AvatarConfig,
+    );
 
   return (
-    <div className="max-w-4xl mx-auto py-8 md:py-12 px-1 flex flex-col gap-6">
+    <div className="max-w-5xl mx-auto py-8 md:py-12 px-1 flex flex-col gap-6">
       <Card glow>
         <CardHeader>
           <CardTitle>{t("profile.avatarTitle")}</CardTitle>
         </CardHeader>
         <CardBody>
           <p className="text-sm text-ink-muted mb-6">{t("profile.avatarDesc")}</p>
-          <div className="grid md:grid-cols-[260px_1fr] gap-8">
-            {/* Live preview */}
-            <div className="flex flex-col items-center gap-4">
+          <div className="grid md:grid-cols-[280px_1fr] gap-8">
+            {/* Live preview — sticky on desktop so it follows the pickers */}
+            <div className="flex flex-col items-center gap-4 md:sticky md:top-24 self-start">
               <div className="animate-float">
-                <Avatar seed={seed} size={200} ring />
+                <Avatar seed={seed} size={220} ring />
               </div>
               <div className="text-center">
                 <div className="font-display font-semibold text-lg text-ink">
@@ -113,23 +136,25 @@ export default function ProfilePage() {
               >
                 {t("profile.randomize")}
               </Button>
+              <Button size="lg" onClick={save} loading={saving} disabled={!dirty} fullWidth>
+                {t("profile.save")}
+              </Button>
             </div>
 
             {/* Pickers */}
             <div className="flex flex-col gap-5">
-              {CATEGORIES.map((cat) => (
-                <div key={cat}>
+              {CATEGORIES.map(({ key, swatches }) => (
+                <div key={key}>
                   <div className="text-xs uppercase tracking-wider text-ink-muted mb-2">
-                    {t(`profile.${cat}`)}
+                    {t(`profile.${key}`)}
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {Array.from({ length: AVATAR_COUNTS[cat] }, (_, i) => {
-                      const active = config[cat] === i;
-                      const preview = buildAvatarSeed({ ...config, [cat]: i });
+                    {Array.from({ length: AVATAR_COUNTS[key] }, (_, i) => {
+                      const active = config[key] === i;
                       return (
                         <button
                           key={i}
-                          onClick={() => setConfig((c) => ({ ...c, [cat]: i }))}
+                          onClick={() => setConfig((c) => ({ ...c, [key]: i }))}
                           aria-pressed={active}
                           className={
                             "rounded-full p-0.5 transition " +
@@ -138,19 +163,20 @@ export default function ProfilePage() {
                               : "ring-1 ring-border hover:ring-brand-cyan/50")
                           }
                         >
-                          {cat === "skin" || cat === "bg" ? (
+                          {swatches ? (
                             <span
-                              className="block w-10 h-10 rounded-full"
+                              className="block w-9 h-9 md:w-10 md:h-10 rounded-full"
                               style={{
                                 background: `linear-gradient(135deg, ${
-                                  (cat === "skin" ? AVATAR_SKINS : AVATAR_BGS)[i]![0]
-                                }, ${
-                                  (cat === "skin" ? AVATAR_SKINS : AVATAR_BGS)[i]![1]
-                                })`,
+                                  swatchColors(swatches[i]!)[0]
+                                }, ${swatchColors(swatches[i]!)[1]})`,
                               }}
                             />
                           ) : (
-                            <Avatar seed={preview} size={40} />
+                            <Avatar
+                              seed={buildAvatarSeed({ ...config, [key]: i })}
+                              size={44}
+                            />
                           )}
                         </button>
                       );
@@ -158,17 +184,6 @@ export default function ProfilePage() {
                   </div>
                 </div>
               ))}
-
-              <div className="pt-2">
-                <Button
-                  size="lg"
-                  onClick={save}
-                  loading={saving}
-                  disabled={!dirty}
-                >
-                  {t("profile.save")}
-                </Button>
-              </div>
             </div>
           </div>
         </CardBody>

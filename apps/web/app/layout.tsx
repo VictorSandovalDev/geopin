@@ -19,7 +19,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="min-h-screen">
+      {/* overflow-x-clip kills the phantom horizontal scroll that decorative
+          full-bleed glows would otherwise create on mobile */}
+      <body className="min-h-screen overflow-x-clip">
         <I18nProvider>
           <ToastProvider>
             <Nav />

@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Button,
@@ -15,7 +16,7 @@ import {
 import type { LatLng, Location } from "@geopin/types";
 import { MAX_ROUND_SCORE } from "@geopin/types";
 import { useI18n } from "@/lib/i18n";
-import { useUiStore } from "@/lib/store";
+import { useAuthStore, useUiStore } from "@/lib/store";
 import { haversineKm, formatDistance } from "@/lib/haversine";
 import {
   SOLO_PACKS,
@@ -52,6 +53,13 @@ type Phase = "setup" | "loading" | "playing" | "reveal" | "finished";
 
 export default function SoloPage() {
   const { t } = useI18n();
+  const router = useRouter();
+  const token = useAuthStore((s) => s.token);
+
+  // Playing requires an account — bounce anonymous visitors to sign-in.
+  useEffect(() => {
+    if (!token) router.replace("/auth");
+  }, [token, router]);
 
   const [packId, setPackId] = useState(SOLO_DEFAULTS.packId);
   const [rounds, setRounds] = useState(SOLO_DEFAULTS.rounds);
@@ -178,6 +186,8 @@ export default function SoloPage() {
   }, []);
 
   /* ---------- screens ---------- */
+
+  if (!token) return null;
 
   if (phase === "setup" || phase === "loading") {
     return (

@@ -18,11 +18,7 @@ export class AuthController {
     return this.auth.login(dto);
   }
 
-  @Post("guest")
-  @HttpCode(200)
-  guest(@Body() dto: { username?: string }) {
-    return this.auth.guest(dto?.username);
-  }
+  // Guest access is disabled — playing requires a registered account.
 
   @UseGuards(JwtAuthGuard)
   @Post("me")
