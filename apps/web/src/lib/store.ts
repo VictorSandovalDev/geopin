@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { AuthResponse, AuthUser, RoomState } from "@geopin/types";
@@ -45,6 +46,26 @@ interface GameState {
     guesses: GameState["guesses"],
   ) => void;
   reset: () => void;
+}
+
+/**
+ * True once the persisted auth store has been rehydrated from localStorage.
+ * Auth-gated pages must wait for this before redirecting — otherwise a hard
+ * navigation bounces signed-in users to /auth because the first render still
+ * sees token: null.
+ */
+export function useAuthHydrated(): boolean {
+  const [hydrated, setHydrated] = useState(
+    () => useAuthStore.persist?.hasHydrated?.() ?? false,
+  );
+  useEffect(() => {
+    if (useAuthStore.persist.hasHydrated()) {
+      setHydrated(true);
+      return;
+    }
+    return useAuthStore.persist.onFinishHydration(() => setHydrated(true));
+  }, []);
+  return hydrated;
 }
 
 interface UiState {

@@ -10,6 +10,8 @@ export interface StreetViewProps {
   location: Location;
   allowPan?: boolean;
   allowZoom?: boolean;
+  /** Hide the "Street View" corner badge (e.g. under a custom HUD). */
+  hideBadge?: boolean;
 }
 
 /**
@@ -28,6 +30,7 @@ export const StreetView: React.FC<StreetViewProps> = ({
   location,
   allowPan = true,
   allowZoom = true,
+  hideBadge = false,
 }) => {
   const googleKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY;
   const mapillaryToken = process.env.NEXT_PUBLIC_MAPILLARY_TOKEN;
@@ -39,6 +42,7 @@ export const StreetView: React.FC<StreetViewProps> = ({
         apiKey={googleKey}
         allowPan={allowPan}
         allowZoom={allowZoom}
+        hideBadge={hideBadge}
       />
     );
   }
@@ -70,7 +74,8 @@ const GoogleStreetView: React.FC<{
   apiKey: string;
   allowPan?: boolean;
   allowZoom?: boolean;
-}> = ({ location, apiKey, allowPan = true, allowZoom = true }) => {
+  hideBadge?: boolean;
+}> = ({ location, apiKey, allowPan = true, allowZoom = true, hideBadge }) => {
   // Share the same loader id as GuessMapGoogle so the API is loaded once.
   const { isLoaded, loadError } = useJsApiLoader({
     id: "geopin-gmaps",
@@ -160,10 +165,12 @@ const GoogleStreetView: React.FC<{
           Loading panorama…
         </div>
       )}
-      <div className="absolute top-3 left-3 z-20 flex items-center gap-2 text-xs uppercase tracking-wider bg-panel/80 border border-brand-cyan/40 px-3 py-1 rounded-full pointer-events-none">
-        <span className="w-1.5 h-1.5 rounded-full bg-brand-cyan animate-pulse-ring" />
-        Street View
-      </div>
+      {!hideBadge && (
+        <div className="absolute top-3 left-3 z-20 flex items-center gap-2 text-xs uppercase tracking-wider bg-panel/80 border border-brand-cyan/40 px-3 py-1 rounded-full pointer-events-none">
+          <span className="w-1.5 h-1.5 rounded-full bg-brand-cyan animate-pulse-ring" />
+          Street View
+        </div>
+      )}
     </div>
   );
 };

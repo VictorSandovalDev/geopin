@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Card, CardBody, CardHeader, CardTitle, Input, Logo, useToast } from "@geopin/ui";
 import { api, ApiError } from "@/lib/api";
-import { useAuthStore } from "@/lib/store";
+import { useAuthStore, useAuthHydrated } from "@/lib/store";
 import { useI18n } from "@/lib/i18n";
 import type { AuthResponse } from "@geopin/types";
 
@@ -26,11 +26,12 @@ export default function AuthPage() {
   });
 
   // Already signed in — there's nothing to register or log into here.
+  const hydrated = useAuthHydrated();
   useEffect(() => {
-    if (user) router.replace("/play");
-  }, [user, router]);
+    if (hydrated && user) router.replace("/play");
+  }, [hydrated, user, router]);
 
-  if (user) return null;
+  if (!hydrated || user) return null;
 
   async function submit() {
     setLoading(true);

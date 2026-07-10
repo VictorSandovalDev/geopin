@@ -16,7 +16,7 @@ import {
 import type { LatLng, Location } from "@geopin/types";
 import { MAX_ROUND_SCORE } from "@geopin/types";
 import { useI18n } from "@/lib/i18n";
-import { useAuthStore, useUiStore } from "@/lib/store";
+import { useAuthStore, useAuthHydrated, useUiStore } from "@/lib/store";
 import { haversineKm, formatDistance } from "@/lib/haversine";
 import {
   SOLO_PACKS,
@@ -54,12 +54,14 @@ type Phase = "setup" | "loading" | "playing" | "reveal" | "finished";
 export default function SoloPage() {
   const { t } = useI18n();
   const router = useRouter();
+  const hydrated = useAuthHydrated();
   const token = useAuthStore((s) => s.token);
 
   // Playing requires an account — bounce anonymous visitors to sign-in.
+  // Wait for store hydration or signed-in users get bounced on reload.
   useEffect(() => {
-    if (!token) router.replace("/auth");
-  }, [token, router]);
+    if (hydrated && !token) router.replace("/auth");
+  }, [hydrated, token, router]);
 
   const [packId, setPackId] = useState(SOLO_DEFAULTS.packId);
   const [rounds, setRounds] = useState(SOLO_DEFAULTS.rounds);
@@ -187,7 +189,7 @@ export default function SoloPage() {
 
   /* ---------- screens ---------- */
 
-  if (!token) return null;
+  if (!hydrated || !token) return null;
 
   if (phase === "setup" || phase === "loading") {
     return (

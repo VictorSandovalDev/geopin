@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Button,
   Card,
@@ -17,12 +17,17 @@ import { useAuthStore } from "@/lib/store";
 import { SOLO_PACKS } from "@/lib/solo";
 import { useI18n } from "@/lib/i18n";
 import type { LeaderboardEntry, MapPack } from "@geopin/types";
+import { configFromLegacySeed, parseAvatarSeed } from "@geopin/ui";
 const Globe3D = dynamic(
   () => import("@/components/Globe3D").then((m) => m.Globe3D),
   { ssr: false },
 );
 const StreetView = dynamic(
   () => import("@/components/StreetView").then((m) => m.StreetView),
+  { ssr: false },
+);
+const Avatar3D = dynamic(
+  () => import("@/components/Avatar3D").then((m) => m.Avatar3D),
   { ssr: false },
 );
 
@@ -87,11 +92,20 @@ export default function HomePage() {
 
 function Hero() {
   const { t } = useI18n();
+  const user = useAuthStore((s) => s.user);
+  // Signed-in players see their own character standing on the world,
+  // GeoGuessr-style. Config resolves from the same seed the 2D avatar uses.
+  const miiConfig = useMemo(() => {
+    if (!user) return null;
+    const seed = user.avatarSeed || user.username;
+    return parseAvatarSeed(seed) ?? configFromLegacySeed(seed);
+  }, [user]);
   return (
     <section className="relative grid md:grid-cols-2 gap-12 items-center">
-      {/* floating blobs */}
-      <div className="absolute -top-20 -left-20 w-[520px] h-[520px] rounded-full bg-brand-cyan/20 blur-[120px] pointer-events-none" />
-      <div className="absolute -bottom-20 -right-20 w-[520px] h-[520px] rounded-full bg-brand-magenta/20 blur-[120px] pointer-events-none" />
+      {/* floating blobs — smaller and fully inside the viewport on phones so
+          the body-level clip never slices them visibly */}
+      <div className="absolute -top-10 -left-6 w-[240px] h-[240px] blur-[70px] md:-top-20 md:-left-20 md:w-[520px] md:h-[520px] md:blur-[120px] rounded-full bg-brand-cyan/20 pointer-events-none" />
+      <div className="absolute -bottom-10 -right-6 w-[240px] h-[240px] blur-[70px] md:-bottom-20 md:-right-20 md:w-[520px] md:h-[520px] md:blur-[120px] rounded-full bg-brand-magenta/20 pointer-events-none" />
 
       <div className="relative flex flex-col gap-6 animate-fade-in">
         <div className="flex items-center gap-2">
@@ -141,9 +155,21 @@ function Hero() {
 
       <div className="relative aspect-square">
         <div className="absolute inset-0 bg-grad-aurora opacity-30 blur-3xl rounded-full animate-float pointer-events-none" />
-        <div className="relative flex items-center justify-center h-full">
-          <Globe3D />
-        </div>
+        {miiConfig ? (
+          // Character standing on the planet — feet overlap the globe's top.
+          <div className="relative flex flex-col items-center justify-end h-full">
+            <div className="relative z-10 w-[56%] h-[56%] -mb-[15%] pointer-events-none">
+              <Avatar3D config={miiConfig} transparent />
+            </div>
+            <div className="w-[82%]">
+              <Globe3D />
+            </div>
+          </div>
+        ) : (
+          <div className="relative flex items-center justify-center h-full">
+            <Globe3D />
+          </div>
+        )}
       </div>
     </section>
   );
@@ -187,6 +213,7 @@ function LivePreview() {
               location={spot}
               allowPan
               allowZoom={false}
+              hideBadge
             />
           ) : (
             <div
@@ -202,14 +229,14 @@ function LivePreview() {
         {/* Top HUD (decorative, lets clicks through to the panorama) */}
         <div className="absolute top-0 inset-x-0 p-3 md:p-4 flex items-start justify-between gap-2 md:gap-4 pointer-events-none">
           <MockPlayerBar side="left" name="VICTOR" score={6400} color="emerald" />
-          <div className="hidden sm:flex flex-col items-center gap-2">
-            <div className="px-3 h-7 rounded-full bg-black/50 backdrop-blur-md border border-white/20 flex items-center gap-2 text-[11px] uppercase tracking-widest text-white/80">
+          <div className="flex flex-col items-center gap-1.5 md:gap-2">
+            <div className="px-3 h-6 md:h-7 rounded-full bg-black/50 backdrop-blur-md border border-white/20 flex items-center gap-1.5 md:gap-2 text-[10px] md:text-[11px] uppercase tracking-widest text-white/80">
               <span>{t("hud.round")}</span>
               <span className="text-brand-cyan font-semibold">3</span>
               <span className="text-white/50">/</span>
               <span>5</span>
             </div>
-            <div className="px-6 h-12 rounded-full border border-white/30 bg-black/60 backdrop-blur-md shadow-lift font-mono text-xl tabular-nums font-bold text-white">
+            <div className="px-4 md:px-6 h-9 md:h-12 rounded-full border border-white/30 bg-black/60 backdrop-blur-md shadow-lift font-mono text-base md:text-xl tabular-nums font-bold text-white">
               01:42
             </div>
           </div>
@@ -228,9 +255,9 @@ function LivePreview() {
           </div>
         )}
 
-        {/* Mini-map + GUESS (decorative) */}
-        <div className="absolute bottom-4 right-4 md:bottom-6 md:right-6 w-44 md:w-72 flex-col gap-2 pointer-events-none hidden sm:flex">
-          <div className="relative h-24 md:h-40 rounded-xl border-2 border-white/40 overflow-hidden shadow-lift">
+        {/* Mini-map + GUESS — the button really starts a game */}
+        <div className="absolute bottom-3 right-3 md:bottom-6 md:right-6 w-40 md:w-72 flex flex-col gap-2 pointer-events-none">
+          <div className="relative h-20 md:h-40 rounded-xl border-2 border-white/40 overflow-hidden shadow-lift">
             <svg viewBox="0 0 300 160" className="w-full h-full">
               <rect width="300" height="160" fill="#F4F7FC" />
               <rect x="60" y="38" width="72" height="44" rx="3" fill="#E2E9F4" />
@@ -247,9 +274,12 @@ function LivePreview() {
               <div className="w-3.5 h-3.5 rounded-full bg-brand-gold ring-2 ring-white shadow" />
             </div>
           </div>
-          <div className="h-10 md:h-12 rounded-xl bg-gradient-to-b from-emerald-400 to-emerald-600 text-void font-display font-bold text-sm tracking-widest uppercase flex items-center justify-center shadow-lift">
-            GUESS
-          </div>
+          <Link
+            href="/solo"
+            className="pointer-events-auto h-10 md:h-12 rounded-xl bg-gradient-to-b from-emerald-400 to-emerald-600 text-void font-display font-bold text-sm tracking-widest uppercase flex items-center justify-center shadow-lift hover:brightness-110 active:translate-y-0.5 transition"
+          >
+            {t("home.preview.playBtn")}
+          </Link>
         </div>
       </div>
     </section>
@@ -270,26 +300,29 @@ const MockPlayerBar: React.FC<{
   return (
     <div
       className={
-        "flex items-center gap-3 " + (side === "right" ? "flex-row-reverse" : "")
+        "flex items-center gap-2 md:gap-3 " +
+        (side === "right" ? "flex-row-reverse" : "")
       }
     >
-      <Avatar seed={name} size={44} />
-      <div className="min-w-[180px]">
+      <div className="hidden sm:block">
+        <Avatar seed={name} size={44} />
+      </div>
+      <div className="min-w-[104px] md:min-w-[180px]">
         <div
           className={
-            "text-xs font-bold tracking-wider text-white mb-1 " +
+            "text-[10px] md:text-xs font-bold tracking-wider text-white mb-1 drop-shadow " +
             (side === "right" ? "text-right" : "")
           }
         >
           {name}
         </div>
-        <div className="relative h-5 rounded-full border border-white/30 bg-black/40 overflow-hidden">
+        <div className="relative h-4 md:h-5 rounded-full border border-white/30 bg-black/40 overflow-hidden">
           <div
             className={`absolute inset-y-0 left-0 bg-gradient-to-r ${gradient}`}
             style={{ width: `${pct}%` }}
           />
           <div className="absolute inset-0 flex items-center justify-center">
-            <span className="text-[11px] font-mono font-bold text-white tabular-nums">
+            <span className="text-[10px] md:text-[11px] font-mono font-bold text-white tabular-nums">
               {score.toLocaleString()}
             </span>
           </div>
@@ -499,8 +532,8 @@ function FinalCta() {
     <section>
       <div className="relative overflow-hidden rounded-3xl border border-border p-10 md:p-16 text-center">
         <div className="absolute inset-0 bg-grad-brand opacity-10" />
-        <div className="absolute -top-40 -left-40 w-[400px] h-[400px] rounded-full bg-brand-cyan/30 blur-[120px]" />
-        <div className="absolute -bottom-40 -right-40 w-[400px] h-[400px] rounded-full bg-brand-magenta/30 blur-[120px]" />
+        <div className="absolute -top-16 -left-16 w-[200px] h-[200px] blur-[60px] md:-top-40 md:-left-40 md:w-[400px] md:h-[400px] md:blur-[120px] rounded-full bg-brand-cyan/30" />
+        <div className="absolute -bottom-16 -right-16 w-[200px] h-[200px] blur-[60px] md:-bottom-40 md:-right-40 md:w-[400px] md:h-[400px] md:blur-[120px] rounded-full bg-brand-magenta/30" />
 
         <div className="relative flex flex-col items-center gap-6">
           <Swords className="w-10 h-10 text-brand-cyan" />

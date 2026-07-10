@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -22,9 +23,14 @@ import {
 } from "@geopin/ui";
 import type { UserProfile } from "@geopin/types";
 import { api } from "@/lib/api";
-import { useAuthStore } from "@/lib/store";
+import { useAuthStore, useAuthHydrated } from "@/lib/store";
 import { useI18n } from "@/lib/i18n";
 import { Dices } from "lucide-react";
+
+const Avatar3D = dynamic(
+  () => import("@/components/Avatar3D").then((m) => m.Avatar3D),
+  { ssr: false },
+);
 
 type Category = keyof AvatarConfig;
 
@@ -54,6 +60,7 @@ export default function ProfilePage() {
   const router = useRouter();
   const { t } = useI18n();
   const toast = useToast();
+  const hydrated = useAuthHydrated();
   const token = useAuthStore((s) => s.token);
   const user = useAuthStore((s) => s.user);
   const updateUser = useAuthStore((s) => s.updateUser);
@@ -69,10 +76,10 @@ export default function ProfilePage() {
   useEffect(() => setConfig(initial), [initial]);
 
   useEffect(() => {
-    if (!token) router.replace("/auth");
-  }, [token, router]);
+    if (hydrated && !token) router.replace("/auth");
+  }, [hydrated, token, router]);
 
-  if (!token || !user) return null;
+  if (!hydrated || !token || !user) return null;
 
   const seed = buildAvatarSeed(config);
   const dirty = seed !== user.avatarSeed;
@@ -117,11 +124,14 @@ export default function ProfilePage() {
         <CardBody>
           <p className="text-sm text-ink-muted mb-6">{t("profile.avatarDesc")}</p>
           <div className="grid md:grid-cols-[280px_1fr] gap-8">
-            {/* Live preview — sticky on desktop so it follows the pickers */}
-            <div className="flex flex-col items-center gap-4 md:sticky md:top-24 self-start">
-              <div className="animate-float">
-                <Avatar seed={seed} size={220} ring />
+            {/* Live 3D preview — sticky on desktop so it follows the pickers */}
+            <div className="flex flex-col items-center gap-4 md:sticky md:top-24 self-start w-full">
+              <div className="w-full max-w-[280px] h-[320px] rounded-2xl overflow-hidden border border-border shadow-lift">
+                <Avatar3D config={config} interactive />
               </div>
+              <p className="text-[11px] text-ink-dim -mt-2">
+                {t("profile.rotateHint")}
+              </p>
               <div className="text-center">
                 <div className="font-display font-semibold text-lg text-ink">
                   {user.username}

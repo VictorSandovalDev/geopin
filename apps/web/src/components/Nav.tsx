@@ -6,7 +6,7 @@ import { Logo, Avatar, Button, Badge } from "@geopin/ui";
 import { useAuthStore, useUiStore } from "@/lib/store";
 import { useI18n } from "@/lib/i18n";
 import { LanguageSelector } from "@/components/LanguageSelector";
-import { Trophy, Home, Swords, MapPin } from "lucide-react";
+import { Trophy, Home, Swords, MapPin, LogIn } from "lucide-react";
 
 export function Nav() {
   const pathname = usePathname();
@@ -73,8 +73,12 @@ export function Nav() {
               </Button>
             </>
           ) : (
-            <Link href="/auth">
-              <Button size="sm">{t("nav.signIn")}</Button>
+            <Link
+              href="/auth"
+              className="inline-flex items-center gap-2 h-9 px-3 sm:px-4 rounded-full bg-gradient-to-b from-brand-cyan to-[#18b6cc] text-void text-sm font-semibold shadow-glow hover:brightness-110 active:translate-y-px transition"
+            >
+              <LogIn className="w-4 h-4" />
+              <span className="hidden sm:inline">{t("nav.signIn")}</span>
             </Link>
           )}
         </div>

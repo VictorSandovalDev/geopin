@@ -28,7 +28,12 @@ import {
   type GameEndedPayload,
   type MapPack,
 } from "@geopin/types";
-import { useAuthStore, useGameStore, useUiStore } from "@/lib/store";
+import {
+  useAuthStore,
+  useAuthHydrated,
+  useGameStore,
+  useUiStore,
+} from "@/lib/store";
 import { useI18n } from "@/lib/i18n";
 import { getSocket, disconnectSocket } from "@/lib/socket";
 import { formatDistance } from "@/lib/haversine";
@@ -102,9 +107,10 @@ function PlayPageInner() {
     reloadPacks();
   }, [reloadPacks]);
 
+  const hydrated = useAuthHydrated();
   useEffect(() => {
-    if (!token) router.replace("/auth");
-  }, [token, router]);
+    if (hydrated && !token) router.replace("/auth");
+  }, [hydrated, token, router]);
 
   /* ---------- socket wiring ---------- */
   useEffect(() => {
@@ -282,7 +288,7 @@ function PlayPageInner() {
 
   /* ---------- renders ---------- */
 
-  if (!token || !user) return null;
+  if (!hydrated || !token || !user) return null;
 
   // End of game
   if (finalLb) {

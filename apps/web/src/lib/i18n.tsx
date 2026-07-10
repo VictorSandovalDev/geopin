@@ -41,6 +41,7 @@ const en: Dict = {
     saved: "Avatar updated!",
     saveFailed: "Could not save",
     randomize: "Surprise me",
+    rotateHint: "Drag the character to rotate it",
   },
   home: {
     hero: {
@@ -64,7 +65,8 @@ const en: Dict = {
       title: "A glance at a live round",
       subtitle:
         "Full-bleed Street View, scoreboards in the corners, mini-map to drop your guess.",
-      dragHint: "Drag to look around — it's live",
+      dragHint: "It's live — drag to look",
+      playBtn: "Play now",
     },
     how: {
       eyebrow: "How it works",
@@ -228,7 +230,7 @@ const en: Dict = {
     playSolo: "Play solo",
     soloCardTitle: "Play solo",
     soloCardDesc:
-      "No account needed. Instant single-player game against the clock.",
+      "Instant single-player game against the clock.",
     soloCardBtn: "Solo mode",
   },
   pack: {
@@ -285,6 +287,7 @@ const es: Dict = {
     saved: "¡Avatar actualizado!",
     saveFailed: "No se pudo guardar",
     randomize: "Sorpréndeme",
+    rotateHint: "Arrastra el personaje para girarlo",
   },
   home: {
     hero: {
@@ -308,7 +311,8 @@ const es: Dict = {
       title: "Un vistazo a una ronda en vivo",
       subtitle:
         "Street View a pantalla completa, marcadores en las esquinas y un minimapa para poner tu pin.",
-      dragHint: "Arrastra para mirar — es en vivo",
+      dragHint: "En vivo — arrastra y mira",
+      playBtn: "Jugar ahora",
       },
     how: {
       eyebrow: "Cómo funciona",
@@ -473,7 +477,7 @@ const es: Dict = {
     playSolo: "Jugar solo",
     soloCardTitle: "Juega en solitario",
     soloCardDesc:
-      "Sin cuenta. Partida individual instantánea contra el reloj.",
+      "Partida individual instantánea contra el reloj.",
     soloCardBtn: "Modo solitario",
   },
   pack: {
