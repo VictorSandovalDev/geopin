@@ -89,6 +89,512 @@ export interface BBox {
 
 export const WORLD_BBOX: BBox = { north: 70, south: -55, east: 180, west: -180 };
 
+export interface CityAnchor {
+  lat: number;
+  lng: number;
+}
+
+/**
+ * City anchors per country. Most random samples are taken near one of these
+ * centers (with a few km of jitter and a small panorama search radius) so
+ * rounds land on urban streets instead of the rural highways that dominate
+ * a uniform bbox sample. Countries without anchors fall back to bbox-only.
+ */
+export const COUNTRY_CITIES: Record<string, CityAnchor[]> = {
+  CO: [
+    { lat: 4.711, lng: -74.072 },   // Bogotá
+    { lat: 6.244, lng: -75.581 },   // Medellín
+    { lat: 3.452, lng: -76.532 },   // Cali
+    { lat: 10.969, lng: -74.781 },  // Barranquilla
+    { lat: 10.391, lng: -75.479 },  // Cartagena
+    { lat: 7.894, lng: -72.508 },   // Cúcuta
+    { lat: 7.119, lng: -73.123 },   // Bucaramanga
+    { lat: 4.808, lng: -75.690 },   // Pereira
+    { lat: 11.240, lng: -74.199 },  // Santa Marta
+    { lat: 4.439, lng: -75.232 },   // Ibagué
+    { lat: 5.070, lng: -75.514 },   // Manizales
+    { lat: 4.142, lng: -73.627 },   // Villavicencio
+    { lat: 1.214, lng: -77.278 },   // Pasto
+    { lat: 8.748, lng: -75.881 },   // Montería
+    { lat: 2.936, lng: -75.289 },   // Neiva
+    { lat: 4.535, lng: -75.676 },   // Armenia
+    { lat: 2.444, lng: -76.615 },   // Popayán
+    { lat: 10.465, lng: -73.260 },  // Valledupar
+    { lat: 5.535, lng: -73.367 },   // Tunja
+    { lat: 9.305, lng: -75.398 },   // Sincelejo
+  ],
+  AR: [
+    { lat: -34.604, lng: -58.382 }, // Buenos Aires
+    { lat: -31.420, lng: -64.188 }, // Córdoba
+    { lat: -32.945, lng: -60.650 }, // Rosario
+    { lat: -32.889, lng: -68.845 }, // Mendoza
+    { lat: -34.921, lng: -57.954 }, // La Plata
+    { lat: -38.005, lng: -57.542 }, // Mar del Plata
+    { lat: -24.783, lng: -65.412 }, // Salta
+    { lat: -26.808, lng: -65.217 }, // San Miguel de Tucumán
+    { lat: -38.951, lng: -68.059 }, // Neuquén
+    { lat: -41.134, lng: -71.310 }, // Bariloche
+    { lat: -54.802, lng: -68.303 }, // Ushuaia
+    { lat: -27.469, lng: -58.830 }, // Corrientes
+  ],
+  MX: [
+    { lat: 19.433, lng: -99.133 },  // Ciudad de México
+    { lat: 20.660, lng: -103.349 }, // Guadalajara
+    { lat: 25.686, lng: -100.316 }, // Monterrey
+    { lat: 19.041, lng: -98.206 },  // Puebla
+    { lat: 32.514, lng: -117.038 }, // Tijuana
+    { lat: 21.122, lng: -101.683 }, // León
+    { lat: 20.967, lng: -89.593 },  // Mérida
+    { lat: 20.588, lng: -100.390 }, // Querétaro
+    { lat: 21.161, lng: -86.851 },  // Cancún
+    { lat: 17.073, lng: -96.726 },  // Oaxaca
+    { lat: 28.632, lng: -106.069 }, // Chihuahua
+    { lat: 19.174, lng: -96.134 },  // Veracruz
+  ],
+  BR: [
+    { lat: -23.551, lng: -46.633 }, // São Paulo
+    { lat: -22.907, lng: -43.173 }, // Rio de Janeiro
+    { lat: -15.794, lng: -47.883 }, // Brasília
+    { lat: -12.977, lng: -38.501 }, // Salvador
+    { lat: -3.732, lng: -38.527 },  // Fortaleza
+    { lat: -19.917, lng: -43.935 }, // Belo Horizonte
+    { lat: -3.119, lng: -60.022 },  // Manaus
+    { lat: -25.429, lng: -49.271 }, // Curitiba
+    { lat: -8.048, lng: -34.877 },  // Recife
+    { lat: -30.035, lng: -51.218 }, // Porto Alegre
+    { lat: -1.456, lng: -48.502 },  // Belém
+    { lat: -27.595, lng: -48.548 }, // Florianópolis
+  ],
+  CL: [
+    { lat: -33.449, lng: -70.669 }, // Santiago
+    { lat: -33.046, lng: -71.620 }, // Valparaíso
+    { lat: -36.827, lng: -73.050 }, // Concepción
+    { lat: -23.651, lng: -70.398 }, // Antofagasta
+    { lat: -29.903, lng: -71.252 }, // La Serena
+    { lat: -38.736, lng: -72.590 }, // Temuco
+    { lat: -41.469, lng: -72.943 }, // Puerto Montt
+    { lat: -20.214, lng: -70.152 }, // Iquique
+    { lat: -53.163, lng: -70.917 }, // Punta Arenas
+  ],
+  PE: [
+    { lat: -12.046, lng: -77.043 }, // Lima
+    { lat: -16.409, lng: -71.537 }, // Arequipa
+    { lat: -8.112, lng: -79.029 },  // Trujillo
+    { lat: -13.532, lng: -71.967 }, // Cusco
+    { lat: -6.771, lng: -79.841 },  // Chiclayo
+    { lat: -5.195, lng: -80.633 },  // Piura
+    { lat: -3.749, lng: -73.254 },  // Iquitos
+    { lat: -12.065, lng: -75.205 }, // Huancayo
+  ],
+  EC: [
+    { lat: -0.180, lng: -78.468 },  // Quito
+    { lat: -2.190, lng: -79.887 },  // Guayaquil
+    { lat: -2.900, lng: -79.006 },  // Cuenca
+    { lat: -1.254, lng: -78.623 },  // Ambato
+    { lat: -0.968, lng: -80.709 },  // Manta
+    { lat: -3.993, lng: -79.204 },  // Loja
+  ],
+  VE: [
+    { lat: 10.480, lng: -66.904 },  // Caracas
+    { lat: 10.654, lng: -71.640 },  // Maracaibo
+    { lat: 10.162, lng: -68.008 },  // Valencia
+    { lat: 10.068, lng: -69.347 },  // Barquisimeto
+    { lat: 10.235, lng: -67.591 },  // Maracay
+    { lat: 8.582, lng: -71.157 },   // Mérida
+  ],
+  UY: [
+    { lat: -34.901, lng: -56.164 }, // Montevideo
+    { lat: -31.383, lng: -57.961 }, // Salto
+    { lat: -32.322, lng: -58.076 }, // Paysandú
+    { lat: -34.909, lng: -54.958 }, // Punta del Este
+    { lat: -30.902, lng: -55.551 }, // Rivera
+  ],
+  BO: [
+    { lat: -16.490, lng: -68.146 }, // La Paz
+    { lat: -17.784, lng: -63.181 }, // Santa Cruz
+    { lat: -17.394, lng: -66.157 }, // Cochabamba
+    { lat: -19.036, lng: -65.259 }, // Sucre
+    { lat: -21.531, lng: -64.729 }, // Tarija
+  ],
+  PY: [
+    { lat: -25.264, lng: -57.576 }, // Asunción
+    { lat: -25.510, lng: -54.616 }, // Ciudad del Este
+    { lat: -27.331, lng: -55.866 }, // Encarnación
+  ],
+  CR: [
+    { lat: 9.928, lng: -84.091 },   // San José
+    { lat: 10.016, lng: -84.212 },  // Alajuela
+    { lat: 9.864, lng: -83.920 },   // Cartago
+    { lat: 10.635, lng: -85.437 },  // Liberia
+  ],
+  CU: [
+    { lat: 23.113, lng: -82.366 },  // La Habana
+    { lat: 20.020, lng: -75.827 },  // Santiago de Cuba
+    { lat: 21.379, lng: -77.917 },  // Camagüey
+  ],
+  DO: [
+    { lat: 18.486, lng: -69.931 },  // Santo Domingo
+    { lat: 19.451, lng: -70.697 },  // Santiago de los Caballeros
+    { lat: 18.582, lng: -68.404 },  // Punta Cana
+    { lat: 19.790, lng: -70.687 },  // Puerto Plata
+  ],
+  GT: [
+    { lat: 14.634, lng: -90.507 },  // Ciudad de Guatemala
+    { lat: 14.835, lng: -91.518 },  // Quetzaltenango
+    { lat: 14.557, lng: -90.733 },  // Antigua Guatemala
+  ],
+  HN: [
+    { lat: 14.072, lng: -87.192 },  // Tegucigalpa
+    { lat: 15.504, lng: -88.025 },  // San Pedro Sula
+    { lat: 15.760, lng: -86.789 },  // La Ceiba
+  ],
+  NI: [
+    { lat: 12.115, lng: -86.236 },  // Managua
+    { lat: 12.435, lng: -86.878 },  // León
+    { lat: 11.930, lng: -85.956 },  // Granada
+  ],
+  PA: [
+    { lat: 8.983, lng: -79.519 },   // Ciudad de Panamá
+    { lat: 9.359, lng: -79.900 },   // Colón
+    { lat: 8.427, lng: -82.431 },   // David
+  ],
+  SV: [
+    { lat: 13.693, lng: -89.218 },  // San Salvador
+    { lat: 13.995, lng: -89.556 },  // Santa Ana
+    { lat: 13.483, lng: -88.177 },  // San Miguel
+  ],
+  US: [
+    { lat: 40.713, lng: -74.006 },  // New York
+    { lat: 34.052, lng: -118.244 }, // Los Angeles
+    { lat: 41.878, lng: -87.630 },  // Chicago
+    { lat: 29.760, lng: -95.370 },  // Houston
+    { lat: 33.448, lng: -112.074 }, // Phoenix
+    { lat: 39.953, lng: -75.164 },  // Philadelphia
+    { lat: 37.775, lng: -122.419 }, // San Francisco
+    { lat: 47.606, lng: -122.332 }, // Seattle
+    { lat: 25.762, lng: -80.192 },  // Miami
+    { lat: 39.739, lng: -104.990 }, // Denver
+    { lat: 42.360, lng: -71.058 },  // Boston
+    { lat: 33.749, lng: -84.388 },  // Atlanta
+    { lat: 29.951, lng: -90.072 },  // New Orleans
+    { lat: 36.170, lng: -115.140 }, // Las Vegas
+    { lat: 38.907, lng: -77.037 },  // Washington DC
+  ],
+  CA: [
+    { lat: 43.653, lng: -79.383 },  // Toronto
+    { lat: 45.502, lng: -73.567 },  // Montreal
+    { lat: 49.283, lng: -123.121 }, // Vancouver
+    { lat: 51.045, lng: -114.057 }, // Calgary
+    { lat: 45.421, lng: -75.697 },  // Ottawa
+    { lat: 53.546, lng: -113.494 }, // Edmonton
+    { lat: 46.813, lng: -71.208 },  // Quebec City
+    { lat: 49.895, lng: -97.138 },  // Winnipeg
+    { lat: 44.649, lng: -63.575 },  // Halifax
+  ],
+  FR: [
+    { lat: 48.857, lng: 2.352 },    // Paris
+    { lat: 43.296, lng: 5.370 },    // Marseille
+    { lat: 45.764, lng: 4.836 },    // Lyon
+    { lat: 43.605, lng: 1.444 },    // Toulouse
+    { lat: 43.710, lng: 7.262 },    // Nice
+    { lat: 47.218, lng: -1.554 },   // Nantes
+    { lat: 48.573, lng: 7.752 },    // Strasbourg
+    { lat: 44.838, lng: -0.579 },   // Bordeaux
+    { lat: 50.629, lng: 3.057 },    // Lille
+  ],
+  ES: [
+    { lat: 40.417, lng: -3.704 },   // Madrid
+    { lat: 41.385, lng: 2.173 },    // Barcelona
+    { lat: 39.470, lng: -0.377 },   // Valencia
+    { lat: 37.389, lng: -5.984 },   // Sevilla
+    { lat: 41.649, lng: -0.888 },   // Zaragoza
+    { lat: 36.721, lng: -4.421 },   // Málaga
+    { lat: 43.263, lng: -2.935 },   // Bilbao
+    { lat: 37.177, lng: -3.598 },   // Granada
+    { lat: 43.362, lng: -8.412 },   // A Coruña
+  ],
+  DE: [
+    { lat: 52.520, lng: 13.405 },   // Berlin
+    { lat: 53.551, lng: 9.994 },    // Hamburg
+    { lat: 48.135, lng: 11.582 },   // Munich
+    { lat: 50.937, lng: 6.960 },    // Cologne
+    { lat: 50.111, lng: 8.682 },    // Frankfurt
+    { lat: 48.776, lng: 9.183 },    // Stuttgart
+    { lat: 51.228, lng: 6.773 },    // Düsseldorf
+    { lat: 51.340, lng: 12.375 },   // Leipzig
+    { lat: 51.051, lng: 13.738 },   // Dresden
+  ],
+  IT: [
+    { lat: 41.903, lng: 12.496 },   // Rome
+    { lat: 45.464, lng: 9.190 },    // Milan
+    { lat: 40.852, lng: 14.268 },   // Naples
+    { lat: 45.070, lng: 7.687 },    // Turin
+    { lat: 38.116, lng: 13.362 },   // Palermo
+    { lat: 43.770, lng: 11.256 },   // Florence
+    { lat: 44.494, lng: 11.343 },   // Bologna
+    { lat: 41.117, lng: 16.872 },   // Bari
+  ],
+  GB: [
+    { lat: 51.507, lng: -0.128 },   // London
+    { lat: 52.487, lng: -1.890 },   // Birmingham
+    { lat: 53.481, lng: -2.243 },   // Manchester
+    { lat: 55.865, lng: -4.258 },   // Glasgow
+    { lat: 55.953, lng: -3.188 },   // Edinburgh
+    { lat: 53.408, lng: -2.992 },   // Liverpool
+    { lat: 53.801, lng: -1.549 },   // Leeds
+    { lat: 51.455, lng: -2.588 },   // Bristol
+    { lat: 51.482, lng: -3.179 },   // Cardiff
+    { lat: 54.597, lng: -5.930 },   // Belfast
+  ],
+  NL: [
+    { lat: 52.368, lng: 4.904 },    // Amsterdam
+    { lat: 51.924, lng: 4.478 },    // Rotterdam
+    { lat: 52.070, lng: 4.300 },    // The Hague
+    { lat: 52.091, lng: 5.121 },    // Utrecht
+    { lat: 51.442, lng: 5.469 },    // Eindhoven
+    { lat: 53.219, lng: 6.567 },    // Groningen
+  ],
+  PT: [
+    { lat: 38.722, lng: -9.139 },   // Lisbon
+    { lat: 41.158, lng: -8.629 },   // Porto
+    { lat: 41.545, lng: -8.427 },   // Braga
+    { lat: 40.203, lng: -8.410 },   // Coimbra
+    { lat: 37.019, lng: -7.930 },   // Faro
+  ],
+  SE: [
+    { lat: 59.329, lng: 18.069 },   // Stockholm
+    { lat: 57.709, lng: 11.975 },   // Gothenburg
+    { lat: 55.605, lng: 13.004 },   // Malmö
+    { lat: 59.859, lng: 17.639 },   // Uppsala
+    { lat: 63.826, lng: 20.263 },   // Umeå
+  ],
+  GR: [
+    { lat: 37.984, lng: 23.727 },   // Athens
+    { lat: 40.640, lng: 22.944 },   // Thessaloniki
+    { lat: 38.246, lng: 21.735 },   // Patras
+    { lat: 35.339, lng: 25.144 },   // Heraklion
+  ],
+  TR: [
+    { lat: 41.008, lng: 28.978 },   // Istanbul
+    { lat: 39.933, lng: 32.860 },   // Ankara
+    { lat: 38.423, lng: 27.143 },   // Izmir
+    { lat: 36.897, lng: 30.713 },   // Antalya
+    { lat: 40.195, lng: 29.060 },   // Bursa
+    { lat: 37.066, lng: 37.378 },   // Gaziantep
+  ],
+  PL: [
+    { lat: 52.230, lng: 21.012 },   // Warsaw
+    { lat: 50.065, lng: 19.945 },   // Kraków
+    { lat: 51.760, lng: 19.457 },   // Łódź
+    { lat: 51.108, lng: 17.038 },   // Wrocław
+    { lat: 52.407, lng: 16.930 },   // Poznań
+    { lat: 54.352, lng: 18.647 },   // Gdańsk
+  ],
+  IE: [
+    { lat: 53.349, lng: -6.260 },   // Dublin
+    { lat: 51.899, lng: -8.474 },   // Cork
+    { lat: 53.271, lng: -9.062 },   // Galway
+    { lat: 52.668, lng: -8.630 },   // Limerick
+  ],
+  CZ: [
+    { lat: 50.076, lng: 14.437 },   // Prague
+    { lat: 49.196, lng: 16.608 },   // Brno
+    { lat: 49.821, lng: 18.263 },   // Ostrava
+    { lat: 49.739, lng: 13.374 },   // Plzeň
+  ],
+  AT: [
+    { lat: 48.208, lng: 16.373 },   // Vienna
+    { lat: 47.071, lng: 15.440 },   // Graz
+    { lat: 48.306, lng: 14.286 },   // Linz
+    { lat: 47.810, lng: 13.055 },   // Salzburg
+    { lat: 47.269, lng: 11.404 },   // Innsbruck
+  ],
+  BE: [
+    { lat: 50.850, lng: 4.352 },    // Brussels
+    { lat: 51.220, lng: 4.402 },    // Antwerp
+    { lat: 51.054, lng: 3.725 },    // Ghent
+    { lat: 50.633, lng: 5.567 },    // Liège
+    { lat: 51.209, lng: 3.225 },    // Bruges
+  ],
+  CH: [
+    { lat: 47.377, lng: 8.541 },    // Zurich
+    { lat: 46.205, lng: 6.143 },    // Geneva
+    { lat: 47.559, lng: 7.589 },    // Basel
+    { lat: 46.948, lng: 7.447 },    // Bern
+    { lat: 46.520, lng: 6.632 },    // Lausanne
+  ],
+  DK: [
+    { lat: 55.676, lng: 12.568 },   // Copenhagen
+    { lat: 56.163, lng: 10.204 },   // Aarhus
+    { lat: 55.403, lng: 10.402 },   // Odense
+    { lat: 57.048, lng: 9.919 },    // Aalborg
+  ],
+  FI: [
+    { lat: 60.170, lng: 24.938 },   // Helsinki
+    { lat: 61.498, lng: 23.761 },   // Tampere
+    { lat: 60.452, lng: 22.267 },   // Turku
+    { lat: 65.012, lng: 25.465 },   // Oulu
+  ],
+  NO: [
+    { lat: 59.913, lng: 10.752 },   // Oslo
+    { lat: 60.393, lng: 5.324 },    // Bergen
+    { lat: 63.430, lng: 10.395 },   // Trondheim
+    { lat: 58.970, lng: 5.733 },    // Stavanger
+    { lat: 69.649, lng: 18.956 },   // Tromsø
+  ],
+  IS: [
+    { lat: 64.147, lng: -21.942 },  // Reykjavík
+    { lat: 65.688, lng: -18.111 },  // Akureyri
+  ],
+  HR: [
+    { lat: 45.815, lng: 15.982 },   // Zagreb
+    { lat: 43.508, lng: 16.440 },   // Split
+    { lat: 45.327, lng: 14.442 },   // Rijeka
+    { lat: 44.119, lng: 15.232 },   // Zadar
+    { lat: 42.650, lng: 18.094 },   // Dubrovnik
+  ],
+  HU: [
+    { lat: 47.498, lng: 19.040 },   // Budapest
+    { lat: 47.532, lng: 21.627 },   // Debrecen
+    { lat: 46.253, lng: 20.148 },   // Szeged
+    { lat: 46.073, lng: 18.232 },   // Pécs
+  ],
+  RO: [
+    { lat: 44.427, lng: 26.103 },   // Bucharest
+    { lat: 46.771, lng: 23.624 },   // Cluj-Napoca
+    { lat: 45.749, lng: 21.227 },   // Timișoara
+    { lat: 47.159, lng: 27.587 },   // Iași
+    { lat: 45.657, lng: 25.601 },   // Brașov
+    { lat: 44.180, lng: 28.635 },   // Constanța
+  ],
+  JP: [
+    { lat: 35.677, lng: 139.766 },  // Tokyo
+    { lat: 34.694, lng: 135.502 },  // Osaka
+    { lat: 35.012, lng: 135.768 },  // Kyoto
+    { lat: 35.181, lng: 136.906 },  // Nagoya
+    { lat: 43.062, lng: 141.354 },  // Sapporo
+    { lat: 33.590, lng: 130.402 },  // Fukuoka
+    { lat: 34.386, lng: 132.456 },  // Hiroshima
+    { lat: 38.268, lng: 140.870 },  // Sendai
+    { lat: 26.212, lng: 127.679 },  // Naha
+  ],
+  KR: [
+    { lat: 37.567, lng: 126.978 },  // Seoul
+    { lat: 35.180, lng: 129.075 },  // Busan
+    { lat: 37.456, lng: 126.705 },  // Incheon
+    { lat: 35.871, lng: 128.601 },  // Daegu
+    { lat: 36.351, lng: 127.385 },  // Daejeon
+    { lat: 35.160, lng: 126.851 },  // Gwangju
+  ],
+  IN: [
+    { lat: 28.614, lng: 77.209 },   // Delhi
+    { lat: 19.076, lng: 72.878 },   // Mumbai
+    { lat: 12.972, lng: 77.594 },   // Bengaluru
+    { lat: 13.083, lng: 80.270 },   // Chennai
+    { lat: 22.573, lng: 88.364 },   // Kolkata
+    { lat: 17.385, lng: 78.487 },   // Hyderabad
+    { lat: 26.912, lng: 75.787 },   // Jaipur
+    { lat: 23.023, lng: 72.571 },   // Ahmedabad
+  ],
+  TH: [
+    { lat: 13.756, lng: 100.502 },  // Bangkok
+    { lat: 18.788, lng: 98.985 },   // Chiang Mai
+    { lat: 7.879, lng: 98.398 },    // Phuket
+    { lat: 16.442, lng: 102.836 },  // Khon Kaen
+    { lat: 12.924, lng: 100.882 },  // Pattaya
+  ],
+  SG: [
+    { lat: 1.352, lng: 103.820 },   // Singapore
+  ],
+  AE: [
+    { lat: 25.204, lng: 55.270 },   // Dubai
+    { lat: 24.454, lng: 54.377 },   // Abu Dhabi
+    { lat: 25.346, lng: 55.421 },   // Sharjah
+  ],
+  MN: [
+    { lat: 47.886, lng: 106.906 },  // Ulaanbaatar
+  ],
+  ID: [
+    { lat: -6.209, lng: 106.846 },  // Jakarta
+    { lat: -7.258, lng: 112.752 },  // Surabaya
+    { lat: -6.917, lng: 107.619 },  // Bandung
+    { lat: 3.595, lng: 98.672 },    // Medan
+    { lat: -8.670, lng: 115.212 },  // Denpasar
+    { lat: -7.797, lng: 110.371 },  // Yogyakarta
+  ],
+  MY: [
+    { lat: 3.139, lng: 101.687 },   // Kuala Lumpur
+    { lat: 5.415, lng: 100.330 },   // George Town
+    { lat: 1.493, lng: 103.741 },   // Johor Bahru
+    { lat: 5.980, lng: 116.073 },   // Kota Kinabalu
+  ],
+  PH: [
+    { lat: 14.599, lng: 120.984 },  // Manila
+    { lat: 10.317, lng: 123.891 },  // Cebu
+    { lat: 7.191, lng: 125.455 },   // Davao
+    { lat: 16.402, lng: 120.596 },  // Baguio
+  ],
+  VN: [
+    { lat: 21.028, lng: 105.854 },  // Hanoi
+    { lat: 10.823, lng: 106.630 },  // Ho Chi Minh City
+    { lat: 16.048, lng: 108.206 },  // Da Nang
+    { lat: 16.464, lng: 107.591 },  // Hue
+    { lat: 10.045, lng: 105.747 },  // Can Tho
+  ],
+  AU: [
+    { lat: -33.869, lng: 151.209 }, // Sydney
+    { lat: -37.814, lng: 144.963 }, // Melbourne
+    { lat: -27.470, lng: 153.026 }, // Brisbane
+    { lat: -31.951, lng: 115.860 }, // Perth
+    { lat: -34.929, lng: 138.601 }, // Adelaide
+    { lat: -28.017, lng: 153.400 }, // Gold Coast
+    { lat: -35.281, lng: 149.128 }, // Canberra
+    { lat: -42.882, lng: 147.324 }, // Hobart
+    { lat: -12.464, lng: 130.846 }, // Darwin
+  ],
+  NZ: [
+    { lat: -36.849, lng: 174.764 }, // Auckland
+    { lat: -41.287, lng: 174.776 }, // Wellington
+    { lat: -43.532, lng: 172.636 }, // Christchurch
+    { lat: -37.787, lng: 175.279 }, // Hamilton
+    { lat: -45.879, lng: 170.503 }, // Dunedin
+    { lat: -45.031, lng: 168.663 }, // Queenstown
+  ],
+  ZA: [
+    { lat: -26.204, lng: 28.047 },  // Johannesburg
+    { lat: -33.925, lng: 18.424 },  // Cape Town
+    { lat: -29.858, lng: 31.022 },  // Durban
+    { lat: -25.748, lng: 28.188 },  // Pretoria
+    { lat: -33.961, lng: 25.615 },  // Gqeberha
+    { lat: -29.085, lng: 26.160 },  // Bloemfontein
+  ],
+  KE: [
+    { lat: -1.292, lng: 36.822 },   // Nairobi
+    { lat: -4.043, lng: 39.668 },   // Mombasa
+    { lat: -0.092, lng: 34.768 },   // Kisumu
+    { lat: -0.303, lng: 36.080 },   // Nakuru
+  ],
+  EG: [
+    { lat: 30.044, lng: 31.236 },   // Cairo
+    { lat: 31.200, lng: 29.919 },   // Alexandria
+    { lat: 25.687, lng: 32.640 },   // Luxor
+  ],
+};
+
+/** Flat pool of every city anchor, used by the world pack. */
+const WORLD_CITY_POOL: Array<{ country: string | null; city: CityAnchor }> =
+  Object.entries(COUNTRY_CITIES).flatMap(([country, cities]) =>
+    cities.map((city) => ({ country, city })),
+  );
+
+/** Share of samples anchored to a city (the rest sample the whole bbox). */
+const CITY_BIAS = 0.85;
+/** Max jitter around a city center, km — keeps samples urban/suburban. */
+const CITY_JITTER_KM = 6;
+/** Panorama search radius for city samples, km. Small on purpose: a big
+ * radius would snap city misses onto the nearest intercity highway. */
+const CITY_SEARCH_RADIUS_KM = 3;
+
 /**
  * Lazy bootstrap for the Maps JS API. v2 of @googlemaps/js-api-loader replaced
  * the Loader class with `setOptions` + `importLibrary`. We call setOptions
@@ -136,6 +642,20 @@ function randomCoord(bbox: BBox): { lat: number; lng: number } {
     lat: bbox.south + Math.random() * (bbox.north - bbox.south),
     lng: bbox.west + Math.random() * (bbox.east - bbox.west),
   };
+}
+
+/** Uniform random point within `radiusKm` of a city center. */
+function randomCoordNearCity(
+  city: CityAnchor,
+  radiusKm: number,
+): { lat: number; lng: number } {
+  const distKm = radiusKm * Math.sqrt(Math.random());
+  const theta = Math.random() * 2 * Math.PI;
+  const dLat = (distKm * Math.cos(theta)) / 111.32;
+  const dLng =
+    (distKm * Math.sin(theta)) /
+    (111.32 * Math.max(0.2, Math.cos((city.lat * Math.PI) / 180)));
+  return { lat: city.lat + dLat, lng: city.lng + dLng };
 }
 
 /**
@@ -227,20 +747,38 @@ export async function pickRandomPanoramas(opts: {
   const findOne = async (): Promise<Location | null> => {
     for (let attempt = 0; attempt < maxAttemptsPerSlot; attempt++) {
       const entry = bboxes[Math.floor(Math.random() * bboxes.length)]!;
-      const coord = randomCoord(entry.bbox);
-      const pano = await findPanorama(sv, coord, radiusKm);
+      // Prefer sampling near a known city so rounds land on urban streets
+      // instead of the rural highways that dominate a uniform bbox sample.
+      const cityPool = entry.country
+        ? (COUNTRY_CITIES[entry.country] ?? []).map((city) => ({
+            country: entry.country,
+            city,
+          }))
+        : WORLD_CITY_POOL;
+      const picked =
+        cityPool.length > 0 && Math.random() < CITY_BIAS
+          ? cityPool[Math.floor(Math.random() * cityPool.length)]!
+          : null;
+      const coord = picked
+        ? randomCoordNearCity(picked.city, CITY_JITTER_KM)
+        : randomCoord(entry.bbox);
+      const pano = await findPanorama(
+        sv,
+        coord,
+        picked ? CITY_SEARCH_RADIUS_KM : radiusKm,
+      );
       if (!pano || usedPanoIds.has(pano.panoId)) continue;
 
       // Country gate: when a pack restricts countries, reverse-geocode the
       // panorama to verify it's actually inside one of them. The bbox check
       // alone leaks across borders (e.g. CO → VE/EC/PA).
-      let resolvedCountry = entry.country;
+      let resolvedCountry = picked?.country ?? entry.country;
       if (allowedCountries) {
         const cc = await panoramaCountry(geocoder, pano.lat, pano.lng);
         if (!cc) {
-          // Geocoder unavailable — fall back to trusting the bbox. Better than
-          // skipping every result if the user hasn't enabled Geocoding API.
-          resolvedCountry = entry.country;
+          // Geocoder unavailable — fall back to trusting the sampled anchor.
+          // Better than skipping every result if Geocoding API is disabled.
+          resolvedCountry = picked?.country ?? entry.country;
         } else if (!allowedCountries.has(cc)) {
           continue; // wrong country, retry
         } else {
