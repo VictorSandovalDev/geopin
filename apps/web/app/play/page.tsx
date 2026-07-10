@@ -109,7 +109,12 @@ function PlayPageInner() {
 
   const hydrated = useAuthHydrated();
   useEffect(() => {
-    if (hydrated && !token) router.replace("/auth");
+    // The persisted token can land a paint after hydration reports done.
+    if (!hydrated || token) return;
+    const id = setTimeout(() => {
+      if (!useAuthStore.getState().token) router.replace("/auth");
+    }, 250);
+    return () => clearTimeout(id);
   }, [hydrated, token, router]);
 
   /* ---------- socket wiring ---------- */

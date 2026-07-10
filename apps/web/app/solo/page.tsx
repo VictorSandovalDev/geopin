@@ -58,9 +58,14 @@ export default function SoloPage() {
   const token = useAuthStore((s) => s.token);
 
   // Playing requires an account — bounce anonymous visitors to sign-in.
-  // Wait for store hydration or signed-in users get bounced on reload.
+  // Wait for store hydration or signed-in users get bounced on reload; the
+  // persisted token can land a paint after hydration reports done.
   useEffect(() => {
-    if (hydrated && !token) router.replace("/auth");
+    if (!hydrated || token) return;
+    const id = setTimeout(() => {
+      if (!useAuthStore.getState().token) router.replace("/auth");
+    }, 250);
+    return () => clearTimeout(id);
   }, [hydrated, token, router]);
 
   const [packId, setPackId] = useState(SOLO_DEFAULTS.packId);

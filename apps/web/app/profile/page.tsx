@@ -9,6 +9,8 @@ import {
   AVATAR_SHIRTS,
   AVATAR_SKINS,
   AVATAR3D_COUNTS,
+  AVATAR3D_COSTUME_TOPS,
+  AVATAR3D_PARTS,
   Button,
   Card,
   CardBody,
@@ -29,37 +31,52 @@ const Avatar3D = dynamic(
   () => import("@/components/Avatar3D").then((m) => m.Avatar3D),
   { ssr: false },
 );
+const PartThumb3D = dynamic(
+  () => import("@/components/PartThumb3D").then((m) => m.PartThumb3D),
+  { ssr: false },
+);
 
 type Category = keyof Avatar3DConfig;
 
 /**
- * Editor sections: color swatches for palettes, emoji chips for GLB parts
- * (the live 3D preview shows every change instantly).
+ * Editor sections: color swatches for palettes, real 3D part renders for
+ * garments/accessories, emoji only where there is no mesh to show (poses).
  */
 const CATEGORIES: Array<{
   key: Category;
   swatches?: Array<[string, string]> | string[];
-  emoji?: string;
-  options?: string[]; // per-option emoji override (e.g. expressions)
-  hasNone?: boolean; // option 0 wears nothing
+  options?: string[]; // per-option emoji (categories without part meshes)
+  parts?: readonly (string | null)[]; // GLB basenames → real icons
+  hasNone?: boolean; // option 0 wears nothing / keeps the original color
 }> = [
   { key: "pose", options: ["🧍", "👋", "🙌", "🚶"] },
   { key: "skin", swatches: AVATAR_SKINS },
-  { key: "hair", emoji: "💇", hasNone: true },
+  { key: "hair", parts: AVATAR3D_PARTS.hair, hasNone: true },
   { key: "hairColor", swatches: AVATAR_HAIR_COLORS },
-  { key: "emotion", options: ["🙂", "😄", "😠"] },
-  { key: "hat", emoji: "🎩", hasNone: true },
-  { key: "glasses", emoji: "👓", hasNone: true },
-  { key: "top", options: ["👕", "🧥", "🧥", "🦸", "🥋"] },
+  { key: "emotion", parts: AVATAR3D_PARTS.emotion },
+  { key: "hat", parts: AVATAR3D_PARTS.hat, hasNone: true },
+  { key: "glasses", parts: AVATAR3D_PARTS.glasses, hasNone: true },
+  { key: "top", parts: AVATAR3D_PARTS.top },
   { key: "topColor", swatches: AVATAR_SHIRTS, hasNone: true }, // 0 = original
-  { key: "bottom", options: ["👖", "👖", "🩳"] },
-  { key: "shoes", options: ["👟", "🥿", "🥿", "🦶"] },
-  {
-    key: "extra",
-    options: ["∅", "🧔", "🧔", "🎧", "🤡", "👶", "🧤", "🧤", "🧦"],
-  },
+  { key: "bottom", parts: AVATAR3D_PARTS.bottom },
+  { key: "shoes", parts: AVATAR3D_PARTS.shoes, hasNone: true },
+  { key: "extra", parts: AVATAR3D_PARTS.extra, hasNone: true },
   { key: "bg", swatches: AVATAR_BGS },
 ];
+
+/** Tint an option icon so it previews with the currently selected colors. */
+function partTint(key: Category, file: string, c: Avatar3DConfig): string | null {
+  if (key === "hair" || file.startsWith("moustache")) {
+    return AVATAR_HAIR_COLORS[c.hairColor] ?? null;
+  }
+  if (key === "top" && c.topColor > 0) {
+    const idx = (AVATAR3D_PARTS.top as readonly string[]).indexOf(file);
+    if (!AVATAR3D_COSTUME_TOPS.has(idx)) {
+      return AVATAR_SHIRTS[c.topColor - 1]?.[0] ?? null;
+    }
+  }
+  return null;
+}
 
 function swatchColors(s: [string, string] | string): [string, string] {
   return Array.isArray(s) ? s : [s, s];
@@ -85,7 +102,13 @@ export default function ProfilePage() {
   useEffect(() => setConfig(initial), [initial]);
 
   useEffect(() => {
-    if (hydrated && !token) router.replace("/auth");
+    // The persisted token can land a paint after hydration reports done —
+    // re-check before bouncing so direct loads don't kick signed-in users.
+    if (!hydrated || token) return;
+    const id = setTimeout(() => {
+      if (!useAuthStore.getState().token) router.replace("/auth");
+    }, 250);
+    return () => clearTimeout(id);
   }, [hydrated, token, router]);
 
   if (!hydrated || !token || !user) return null;
@@ -162,7 +185,7 @@ export default function ProfilePage() {
 
             {/* Pickers */}
             <div className="flex flex-col gap-5">
-              {CATEGORIES.map(({ key, swatches, emoji, options, hasNone }) => (
+              {CATEGORIES.map(({ key, swatches, options, parts, hasNone }) => (
                 <div key={key}>
                   <div className="text-xs uppercase tracking-wider text-ink-muted mb-2">
                     {t(`profile.${key}`)}
@@ -170,7 +193,9 @@ export default function ProfilePage() {
                   <div className="flex flex-wrap gap-2">
                     {Array.from({ length: AVATAR3D_COUNTS[key] }, (_, i) => {
                       const active = config[key] === i;
-                      const isNone = (hasNone && i === 0) || options?.[i] === "∅";
+                      const partFile = parts?.[i] ?? null;
+                      const isNone =
+                        (hasNone && i === 0) || (parts ? !partFile : false);
                       return (
                         <button
                           key={i}
@@ -198,18 +223,26 @@ export default function ProfilePage() {
                               🎨
                             </span>
                           ) : (
-                            <span className="flex w-9 h-9 md:w-10 md:h-10 rounded-full items-center justify-center bg-panel/70 text-lg select-none">
-                              {isNone ? (
+                            <span
+                              className={
+                                "flex w-9 h-9 md:w-10 md:h-10 rounded-full items-center justify-center text-lg select-none overflow-hidden " +
+                                // Face features are dark meshes — they need a
+                                // light chip to be visible.
+                                (key === "emotion" && partFile
+                                  ? "bg-[#E9D8C3]"
+                                  : "bg-panel/70")
+                              }
+                            >
+                              {partFile ? (
+                                <PartThumb3D
+                                  file={partFile}
+                                  size={38}
+                                  tint={partTint(key, partFile, config)}
+                                />
+                              ) : isNone ? (
                                 <span className="text-ink-dim text-sm">∅</span>
                               ) : (
-                                <>
-                                  {options?.[i] ?? emoji}
-                                  {!options && (
-                                    <span className="text-[10px] text-ink-dim ml-0.5">
-                                      {i}
-                                    </span>
-                                  )}
-                                </>
+                                options?.[i]
                               )}
                             </span>
                           )}

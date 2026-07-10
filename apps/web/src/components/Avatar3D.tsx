@@ -33,7 +33,7 @@ loader.setMeshoptDecoder(MeshoptDecoder);
 
 const gltfCache = new Map<string, Promise<THREE.Group>>();
 
-function loadPart(file: string): Promise<THREE.Group> {
+export function loadPart(file: string): Promise<THREE.Group> {
   let p = gltfCache.get(file);
   if (!p) {
     p = loader
@@ -76,7 +76,7 @@ function tintFor(file: string, c: Avatar3DConfig): THREE.Color | null {
  * The rig rests in a T-pose. Each bone's local +X axis swings the arm in the
  * body plane (found empirically), so lowering the arms is a local rotateX.
  */
-function relaxPose(root: THREE.Object3D) {
+export function relaxPose(root: THREE.Object3D) {
   const rotX: Record<string, number> = {
     LeftArm: -0.9,
     RightArm: -0.9,
@@ -222,18 +222,26 @@ export function animateIdle(rig: CharacterRig, t: number, poseIndex = 0) {
     pose("LeftForeArm", (b) => b.rotateX(0.25));
     pose("RightForeArm", (b) => b.rotateX(0.25));
   } else if (poseIndex === 3) {
-    // Walk in place: opposite-phase leg swings with knee bend on the back
-    // swing, arms counter-swinging close to the body.
+    // Walk in place. Leg bones swing forward/back around their local Z axis
+    // (X scissors them sideways); knees bend on the back swing. Arms
+    // counter-swing and the torso leans slightly into the stride.
     const step = Math.sin(t * 4.2);
-    const knee = (s: number) => Math.max(0, -s) * 0.85 + 0.08;
-    pose("LeftUpLeg", (b) => b.rotateX(step * 0.45));
-    pose("RightUpLeg", (b) => b.rotateX(-step * 0.45));
-    pose("LeftLeg", (b) => b.rotateX(knee(step)));
-    pose("RightLeg", (b) => b.rotateX(knee(-step)));
-    pose("LeftArm", (b) => b.rotateX(0.12 + breathe));
-    pose("RightArm", (b) => b.rotateX(0.12 + breathe));
-    pose("LeftForeArm", (b) => b.rotateX(0.25 + Math.max(0, -step) * 0.5));
-    pose("RightForeArm", (b) => b.rotateX(0.25 + Math.max(0, step) * 0.5));
+    const knee = (s: number) => Math.max(0, -s) * 0.8 + 0.08;
+    pose("Spine", (b) => b.rotateX(0.06 + breathe));
+    pose("LeftUpLeg", (b) => b.rotateZ(step * 0.5));
+    pose("RightUpLeg", (b) => b.rotateZ(-step * 0.5));
+    pose("LeftLeg", (b) => b.rotateZ(knee(step)));
+    pose("RightLeg", (b) => b.rotateZ(knee(-step)));
+    pose("LeftArm", (b) => {
+      b.rotateX(0.12 + breathe);
+      b.rotateZ(-step * 0.3);
+    });
+    pose("RightArm", (b) => {
+      b.rotateX(0.12 + breathe);
+      b.rotateZ(step * 0.3);
+    });
+    pose("LeftForeArm", (b) => b.rotateX(0.2));
+    pose("RightForeArm", (b) => b.rotateX(0.2));
   } else {
     pose("LeftArm", (b) => b.rotateX(liftL + breathe));
     pose("RightArm", (b) => b.rotateX(liftR + breathe));

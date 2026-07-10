@@ -63,10 +63,11 @@ function getRenderer(THREE: ThreeNS) {
   const key = new THREE.DirectionalLight(0xffffff, 1.5);
   key.position.set(2.5, 4, 3);
   scene.add(key);
-  // Portrait framing: the head spans roughly y 1.45–2.1.
-  const camera = new THREE.PerspectiveCamera(28, 1, 0.1, 20);
-  camera.position.set(0, 1.74, 2.35);
-  camera.lookAt(0, 1.66, 0);
+  // Tight portrait framing: the face fills the circle (head ≈ y 1.5–1.95,
+  // hats poke above and may crop — that reads better than a tiny face).
+  const camera = new THREE.PerspectiveCamera(26, 1, 0.1, 20);
+  camera.position.set(0, 1.76, 1.45);
+  camera.lookAt(0, 1.72, 0);
   shared = { renderer, scene, camera };
   return shared;
 }
