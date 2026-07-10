@@ -225,13 +225,18 @@ export function animateIdle(rig: CharacterRig, t: number, poseIndex = 0) {
     // Walk in place. Leg bones swing forward/back around their local Z axis
     // (X scissors them sideways); knees bend on the back swing. Arms
     // counter-swing and the torso leans slightly into the stride.
-    const step = Math.sin(t * 4.2);
-    const knee = (s: number) => Math.max(0, -s) * 0.8 + 0.08;
-    pose("Spine", (b) => b.rotateX(0.06 + breathe));
-    pose("LeftUpLeg", (b) => b.rotateZ(step * 0.5));
-    pose("RightUpLeg", (b) => b.rotateZ(-step * 0.5));
-    pose("LeftLeg", (b) => b.rotateZ(knee(step)));
-    pose("RightLeg", (b) => b.rotateZ(knee(-step)));
+    const speed = 4.2;
+    const step = Math.sin(t * speed);
+    const kneeBend = (phase: number) =>
+      Math.max(0, -Math.sin(t * speed + phase)) * 0.9 + 0.08;
+    pose("Spine", (b) => b.rotateX(0.07 + breathe));
+    // Hips twist into each stride; the per-footfall vertical bob lives in
+    // the render loop (bones only rotate here).
+    pose("Hips", (b) => b.rotateY(step * 0.09));
+    pose("LeftUpLeg", (b) => b.rotateZ(step * 0.55));
+    pose("RightUpLeg", (b) => b.rotateZ(-step * 0.55));
+    pose("LeftLeg", (b) => b.rotateZ(kneeBend(0)));
+    pose("RightLeg", (b) => b.rotateZ(kneeBend(Math.PI)));
     pose("LeftArm", (b) => {
       b.rotateX(0.12 + breathe);
       b.rotateZ(-step * 0.3);
@@ -405,7 +410,11 @@ export function Avatar3D({
       }
       holder.rotation.y += (targetRotY - holder.rotation.y) * 0.15;
       if (rig) {
-        rig.group.position.y = Math.sin(t * 1.9) * 0.012;
+        // Walking bounces once per footfall; other poses breathe gently.
+        rig.group.position.y =
+          configRef.current.pose === 3
+            ? Math.abs(Math.cos(t * 4.2)) * 0.05
+            : Math.sin(t * 1.9) * 0.012;
         animateIdle(rig, t, configRef.current.pose);
       }
       renderer.render(scene, camera);
