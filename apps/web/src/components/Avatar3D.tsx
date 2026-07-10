@@ -45,16 +45,24 @@ function loadPart(file: string): Promise<THREE.Group> {
 }
 
 /** Which tint (if any) applies to a part file. */
+/**
+ * Multiplying a tint over the painted atlas gives muddy, wrong colors, so
+ * customized parts drop the texture and use a flat material color instead
+ * (the toon look survives on lighting alone). topColor 0 = original texture.
+ */
 function tintFor(file: string, c: Avatar3DConfig): THREE.Color | null {
   if (file === AVATAR3D_BODY) {
     return new THREE.Color(AVATAR_SKINS[c.skin]?.[0] ?? "#FFDDBF");
   }
-  if ((AVATAR3D_PARTS.hair as readonly (string | null)[]).includes(file)) {
+  if (
+    (AVATAR3D_PARTS.hair as readonly (string | null)[]).includes(file) ||
+    file.startsWith("moustache")
+  ) {
     return new THREE.Color(AVATAR_HAIR_COLORS[c.hairColor] ?? "#2B2117");
   }
   const isTop = (AVATAR3D_PARTS.top as readonly string[]).indexOf(file);
-  if (isTop >= 0 && !AVATAR3D_COSTUME_TOPS.has(isTop)) {
-    return new THREE.Color(AVATAR_SHIRTS[c.topColor]?.[0] ?? "#FFFFFF");
+  if (isTop >= 0 && !AVATAR3D_COSTUME_TOPS.has(isTop) && c.topColor > 0) {
+    return new THREE.Color(AVATAR_SHIRTS[c.topColor - 1]?.[0] ?? "#FFFFFF");
   }
   return null;
 }
@@ -102,6 +110,14 @@ const ANIMATED_BONES = [
   "RightArm",
   "LeftForeArm",
   "RightForeArm",
+  "LeftHand",
+  "RightHand",
+  "LeftUpLeg",
+  "RightUpLeg",
+  "LeftLeg",
+  "RightLeg",
+  "LeftFoot",
+  "RightFoot",
 ];
 
 /**
@@ -135,6 +151,7 @@ export async function buildCharacter(config: Avatar3DConfig): Promise<CharacterR
       if (tint) {
         const src = mesh.material as THREE.MeshStandardMaterial;
         const m = src.clone();
+        m.map = null; // flat color — see tintFor
         m.color = tint;
         mesh.material = m;
       }
@@ -183,15 +200,40 @@ export function animateIdle(rig: CharacterRig, t: number, poseIndex = 0) {
     const wave = Math.sin(t * 5.5) * 0.28;
     pose("LeftArm", (b) => b.rotateX(liftL + breathe));
     pose("LeftForeArm", (b) => b.rotateX(liftL * 0.4));
-    pose("RightArm", (b) => b.rotateX(2.55 + breathe));
-    pose("RightForeArm", (b) => b.rotateX(0.6 + wave));
+    // The long-axis twist (rotateY) turns the palm forward — without it the
+    // hand keeps its T-pose orientation and looks broken.
+    pose("RightArm", (b) => {
+      b.rotateX(2.5 + breathe);
+      b.rotateY(1.25);
+    });
+    pose("RightForeArm", (b) => b.rotateX(0.45 + wave));
+    pose("RightHand", (b) => b.rotateX(0.15));
   } else if (poseIndex === 2) {
     // Victory: both arms up in a V, tiny celebratory pulse.
     const pump = (Math.sin(t * 2.4) + 1) * 0.5 * 0.08;
-    pose("LeftArm", (b) => b.rotateX(2.3 + pump + breathe));
-    pose("RightArm", (b) => b.rotateX(2.3 + pump + breathe));
+    pose("LeftArm", (b) => {
+      b.rotateX(2.3 + pump + breathe);
+      b.rotateY(-1.25);
+    });
+    pose("RightArm", (b) => {
+      b.rotateX(2.3 + pump + breathe);
+      b.rotateY(1.25);
+    });
     pose("LeftForeArm", (b) => b.rotateX(0.25));
     pose("RightForeArm", (b) => b.rotateX(0.25));
+  } else if (poseIndex === 3) {
+    // Walk in place: opposite-phase leg swings with knee bend on the back
+    // swing, arms counter-swinging close to the body.
+    const step = Math.sin(t * 4.2);
+    const knee = (s: number) => Math.max(0, -s) * 0.85 + 0.08;
+    pose("LeftUpLeg", (b) => b.rotateX(step * 0.45));
+    pose("RightUpLeg", (b) => b.rotateX(-step * 0.45));
+    pose("LeftLeg", (b) => b.rotateX(knee(step)));
+    pose("RightLeg", (b) => b.rotateX(knee(-step)));
+    pose("LeftArm", (b) => b.rotateX(0.12 + breathe));
+    pose("RightArm", (b) => b.rotateX(0.12 + breathe));
+    pose("LeftForeArm", (b) => b.rotateX(0.25 + Math.max(0, -step) * 0.5));
+    pose("RightForeArm", (b) => b.rotateX(0.25 + Math.max(0, step) * 0.5));
   } else {
     pose("LeftArm", (b) => b.rotateX(liftL + breathe));
     pose("RightArm", (b) => b.rotateX(liftR + breathe));

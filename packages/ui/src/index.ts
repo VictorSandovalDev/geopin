@@ -3,6 +3,7 @@ export * from "./Button";
 export * from "./Card";
 export * from "./Input";
 export * from "./Badge";
+export * from "./avatarPalettes";
 export * from "./Avatar";
 export * from "./Avatar3DConfig";
 export * from "./Modal";

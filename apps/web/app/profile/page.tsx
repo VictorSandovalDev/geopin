@@ -43,7 +43,7 @@ const CATEGORIES: Array<{
   options?: string[]; // per-option emoji override (e.g. expressions)
   hasNone?: boolean; // option 0 wears nothing
 }> = [
-  { key: "pose", options: ["🧍", "👋", "🙌"] },
+  { key: "pose", options: ["🧍", "👋", "🙌", "🚶"] },
   { key: "skin", swatches: AVATAR_SKINS },
   { key: "hair", emoji: "💇", hasNone: true },
   { key: "hairColor", swatches: AVATAR_HAIR_COLORS },
@@ -51,7 +51,7 @@ const CATEGORIES: Array<{
   { key: "hat", emoji: "🎩", hasNone: true },
   { key: "glasses", emoji: "👓", hasNone: true },
   { key: "top", options: ["👕", "🧥", "🧥", "🦸", "🥋"] },
-  { key: "topColor", swatches: AVATAR_SHIRTS },
+  { key: "topColor", swatches: AVATAR_SHIRTS, hasNone: true }, // 0 = original
   { key: "bottom", options: ["👖", "👖", "🩳"] },
   { key: "shoes", options: ["👟", "🥿", "🥿", "🦶"] },
   {
@@ -184,15 +184,19 @@ export default function ProfilePage() {
                               : "ring-1 ring-border hover:ring-brand-cyan/50")
                           }
                         >
-                          {swatches ? (
+                          {swatches && !(hasNone && i === 0) ? (
                             <span
                               className="block w-9 h-9 md:w-10 md:h-10 rounded-full"
                               style={{
                                 background: `linear-gradient(135deg, ${
-                                  swatchColors(swatches[i]!)[0]
-                                }, ${swatchColors(swatches[i]!)[1]})`,
+                                  swatchColors(swatches[hasNone ? i - 1 : i]!)[0]
+                                }, ${swatchColors(swatches[hasNone ? i - 1 : i]!)[1]})`,
                               }}
                             />
+                          ) : swatches ? (
+                            <span className="flex w-9 h-9 md:w-10 md:h-10 rounded-full items-center justify-center bg-panel/70 text-lg select-none">
+                              🎨
+                            </span>
                           ) : (
                             <span className="flex w-9 h-9 md:w-10 md:h-10 rounded-full items-center justify-center bg-panel/70 text-lg select-none">
                               {isNone ? (

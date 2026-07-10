@@ -3,9 +3,8 @@ import {
   AVATAR_HAIR_COLORS,
   AVATAR_SHIRTS,
   AVATAR_SKINS,
-  parseAvatarSeed,
-  type AvatarConfig,
-} from "./Avatar";
+} from "./avatarPalettes";
+import { parseAvatarSeed, type AvatarConfig } from "./Avatar";
 
 /**
  * Avatar v3 — GLB-based character ("Creative Character" pack).
@@ -30,7 +29,7 @@ export interface Avatar3DConfig {
 }
 
 /** Procedural stances (bone offsets live in the web renderer). */
-export const AVATAR3D_POSES = ["idle", "wave", "victory"] as const;
+export const AVATAR3D_POSES = ["idle", "wave", "victory", "walk"] as const;
 
 /**
  * Part slot → list of GLB basenames under /avatar3d/ (null = nothing worn).
@@ -79,7 +78,7 @@ export const AVATAR3D_COUNTS = {
   hat: AVATAR3D_PARTS.hat.length,
   glasses: AVATAR3D_PARTS.glasses.length,
   top: AVATAR3D_PARTS.top.length,
-  topColor: AVATAR_SHIRTS.length,
+  topColor: AVATAR_SHIRTS.length + 1, // 0 = the garment's original texture
   bottom: AVATAR3D_PARTS.bottom.length,
   shoes: AVATAR3D_PARTS.shoes.length,
   extra: AVATAR3D_PARTS.extra.length,
